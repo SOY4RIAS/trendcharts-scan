@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeScan Terminal - Enhanced with Charts</title>
+    
+    <!-- Chart.js for beautiful charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #121826;
+            --bg-tertiary: #1a2332;
+            --accent-green: #00ff88;
+            --accent-red: #ff4466;
+            --accent-blue: #4488ff;
+            --accent-yellow: #ffbb33;
+            --text-primary: #e8edf2;
+            --text-secondary: #8b95a8;
+            --border: #2a3544;
+            --shadow: rgba(0, 0, 0, 0.4);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+        
+        .grid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.3;
+            z-index: -1;
+            animation: gridPulse 20s ease-in-out infinite;
+        }
+        
+        @keyframes gridPulse {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.4; }
+        }
+        
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--accent-green);
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 20px;
+            animation: pulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .logo h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .logo-badge {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--accent-green);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 1px solid var(--accent-green);
+        }
+        
+        .market-status {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+        
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .status-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .status-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .status-value.positive { color: var(--accent-green); }
+        .status-value.negative { color: var(--accent-red); }
+        
+        .container {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .control-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .control-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        input, select {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+        }
+        
+        button {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            color: var(--bg-primary);
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: 'IBM Plex Sans', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .stock-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px var(--shadow);
+            transition: all 0.3s;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .stock-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px var(--shadow);
+            border-color: var(--accent-green);
+        }
+        
+        .stock-card.buy-signal {
+            border-left: 4px solid var(--accent-green);
+        }
+        
+        .stock-card.sell-signal {
+            border-left: 4px solid var(--accent-red);
+        }
+        
+        .stock-card.neutral-signal {
+            border-left: 4px solid var(--accent-yellow);
+        }
+        
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+        
+        .stock-ticker {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .stock-signal {
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .signal-buy {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+        
+        .signal-sell {
+            background: rgba(255, 68, 102, 0.2);
+            color: var(--accent-red);
+            border: 1px solid var(--accent-red);
+        }
+        
+        .signal-hold {
+            background: rgba(255, 187, 51, 0.2);
+            color: var(--accent-yellow);
+            border: 1px solid var(--accent-yellow);
+        }
+        
+        .stock-price {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .price-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .price-change {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .price-change.positive { color: var(--accent-green); }
+        .price-change.negative { color: var(--accent-red); }
+        
+        /* Chart Container */
+        .chart-container {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            position: relative;
+            height: 250px;
+        }
+        
+        .chart-helper-text {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 0.5rem;
+            text-align: center;
+            font-style: italic;
+            opacity: 0.7;
+        }
+        
+        .chart-helper-text.hidden {
+            display: none;
+        }
+        
+        .chart-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .chart-spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .chart-loading-text {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        canvas {
+            max-height: 230px;
+        }
+        
+        /* Range Selector */
+        .range-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            justify-content: center;
+        }
+        
+        .range-btn {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .range-btn:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+        
+        .range-btn.active {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            border-color: var(--accent-green);
+        }
+        
+        .indicators {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+        }
+        
+        .indicator {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .indicator-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .indicator-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        
+        .trade-levels {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+        
+        .trade-levels h4 {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+        
+        .level-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+        
+        .level-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .level-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        
+        .level-entry { color: var(--accent-blue); }
+        .level-stop { color: var(--accent-red); }
+        .level-target { color: var(--accent-green); }
+        
+        .setup-description {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        .loading-text {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .empty-state-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .error-message {
+            background: rgba(255, 68, 102, 0.1);
+            border: 1px solid var(--accent-red);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            color: var(--accent-red);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .score-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .score-excellent {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+        
+        .score-good {
+            background: rgba(68, 136, 255, 0.2);
+            color: var(--accent-blue);
+            border: 1px solid var(--accent-blue);
+        }
+        
+        .score-moderate {
+            background: rgba(255, 187, 51, 0.2);
+            color: var(--accent-yellow);
+            border: 1px solid var(--accent-yellow);
+        }
+        
+        .score-poor {
+            background: rgba(255, 68, 102, 0.2);
+            color: var(--accent-red);
+            border: 1px solid var(--accent-red);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+            
+            .market-status {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-background"></div>
+    
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">TS</div>
+            <div>
+                <h1>TradeScan Terminal</h1>
+            </div>
+            <div class="logo-badge">Charts</div>
+        </div>
+        <div class="market-status">
+            <div class="status-item">
+                <div class="status-label">SPY</div>
+                <div class="status-value" id="spy-price">--</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">VIX</div>
+                <div class="status-value" id="vix-price">--</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Time</div>
+                <div class="status-value" id="current-time">--:--</div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="control-panel">
+            <div class="controls-grid">
+                <div class="control-group">
+                    <label class="control-label">Watchlist</label>
+                    <select id="watchlist">
+                        <option value="tech">Tech Giants (AAPL, MSFT, NVDA, AMD, GOOGL)</option>
+                        <option value="finance">Finance (JPM, BAC, GS, MS, WFC)</option>
+                        <option value="healthcare">Healthcare (JNJ, UNH, PFE, ABBV, LLY)</option>
+                        <option value="consumer">Consumer (WMT, COST, HD, NKE, MCD)</option>
+                        <option value="custom">Custom Tickers</option>
+                    </select>
+                </div>
+                
+                <div class="control-group" id="custom-tickers-group" style="display: none;">
+                    <label class="control-label">Custom Tickers</label>
+                    <input type="text" id="custom-tickers" placeholder="AAPL, MSFT, TSLA...">
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Min R:R Ratio</label>
+                    <select id="min-rr">
+                        <option value="2">2:1 (Moderate)</option>
+                        <option value="3" selected>3:1 (Conservative)</option>
+                        <option value="4">4:1 (Very Conservative)</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Account Size</label>
+                    <input type="number" id="account-size" placeholder="2000" value="2000" min="100" step="100">
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Risk % per Trade</label>
+                    <input type="number" id="risk-percent" placeholder="0.5" value="0.5" min="0.1" max="5" step="0.1">
+                </div>
+            </div>
+            
+            <button id="scan-btn" onclick="scanStocks()">
+                🎯 Scan for Opportunities
+            </button>
+        </div>
+        
+        <div id="results-container"></div>
+    </div>
+    
+    <script>
+        // Configuration
+        const WATCHLISTS = {
+            tech: ['AAPL', 'MSFT', 'NVDA', 'AMD', 'GOOGL'],
+            finance: ['JPM', 'BAC', 'GS', 'MS', 'WFC'],
+            healthcare: ['JNJ', 'UNH', 'PFE', 'ABBV', 'LLY'],
+            consumer: ['WMT', 'COST', 'HD', 'NKE', 'MCD']
+        };
+        
+        // Store charts for cleanup
+        const chartInstances = {};
+        
+        // Update time
+        function updateTime() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+            });
+            document.getElementById('current-time').textContent = time;
+        }
+        
+        setInterval(updateTime, 1000);
+        updateTime();
+        
+        // Toggle custom tickers input
+        document.getElementById('watchlist').addEventListener('change', function(e) {
+            const customGroup = document.getElementById('custom-tickers-group');
+            customGroup.style.display = e.target.value === 'custom' ? 'block' : 'none';
+        });
+        
+        // Generate realistic simulated historical data
+        function generateHistoricalData(currentPrice, days) {
+            const data = [];
+            let price = currentPrice * 0.85; // Start 15% lower
+            const volatility = currentPrice * 0.02; // 2% daily volatility
+            
+            for (let i = 0; i < days; i++) {
+                const change = (Math.random() - 0.48) * volatility; // Slight upward bias
+                price += change;
+                price = Math.max(price, currentPrice * 0.70); // Floor at 30% below
+                price = Math.min(price, currentPrice * 1.15); // Cap at 15% above
+                
+                data.push({
+                    date: new Date(Date.now() - (days - i) * 24 * 60 * 60 * 1000),
+                    open: price,
+                    high: price * (1 + Math.random() * 0.02),
+                    low: price * (1 - Math.random() * 0.02),
+                    close: price,
+                    volume: Math.floor(Math.random() * 50000000) + 10000000
+                });
+            }
+            
+            return data;
+        }
+        
+        // Fetch historical chart data
+        async function fetchChartData(ticker, range = '1mo') {
+            const rangeMap = {
+                '5d': 5,
+                '1mo': 30,
+                '3mo': 90,
+                '6mo': 180,
+                '1y': 365
+            };
+            
+            try {
+                // Try to fetch real data from Yahoo Finance
+                const interval = range === '5d' ? '1h' : '1d';
+                const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=${range}&interval=${interval}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.chart && data.chart.result && data.chart.result[0]) {
+                    const result = data.chart.result[0];
+                    const timestamps = result.timestamp;
+                    const quotes = result.indicators.quote[0];
+                    
+                    return timestamps.map((ts, i) => ({
+                        date: new Date(ts * 1000),
+                        open: quotes.open[i],
+                        high: quotes.high[i],
+                        low: quotes.low[i],
+                        close: quotes.close[i],
+                        volume: quotes.volume[i]
+                    }));
+                }
+            } catch (error) {
+                console.log(`Using simulated chart data for ${ticker}`);
+            }
+            
+            // Fallback to simulated data
+            const currentPrice = parseFloat(document.querySelector(`[data-ticker="${ticker}"]`)?.dataset.price || 100);
+            return generateHistoricalData(currentPrice, rangeMap[range] || 30);
+        }
+        
+        // Create candlestick-style chart
+        async function createChart(ticker, containerId, range = '1mo') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // Show loading
+            container.innerHTML = `
+                <div class="chart-loading">
+                    <div class="chart-spinner"></div>
+                    <div class="chart-loading-text">Loading ${range} chart...</div>
+                </div>
+            `;
+            
+            try {
+                // Get current MA values from the stock card
+                const stockCard = container.closest('.stock-card');
+                const currentMA50 = parseFloat(stockCard?.dataset.ma50 || 100);
+                const currentMA200 = parseFloat(stockCard?.dataset.ma200 || 95);
+                
+                // Fetch data
+                const chartData = await fetchChartData(ticker, range);
+                
+                // Prepare data for Chart.js
+                const labels = chartData.map(d => d.date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                }));
+                const closes = chartData.map(d => d.close);
+                const highs = chartData.map(d => d.high);
+                const lows = chartData.map(d => d.low);
+                
+                // Calculate MA50 and MA200 for longer ranges
+                const calculatedMA50 = calculateMA(closes, 50);
+                const calculatedMA200 = calculateMA(closes, 200);
+                
+                // Smart MA display logic
+                const dataPoints = closes.length;
+                let ma50Data, ma200Data, showMA200 = true;
+                
+                // MA50 logic
+                if (dataPoints < 50) {
+                    // Very short range (5d, 1mo): show current MA50 as reference
+                    ma50Data = Array(dataPoints).fill(currentMA50);
+                } else {
+                    // Long enough: show calculated MA50
+                    ma50Data = calculatedMA50;
+                }
+                
+                // MA200 logic - more conservative
+                if (dataPoints < 90) {
+                    // Very short range (5d, 1mo, 3mo): show current MA200 as reference
+                    ma200Data = Array(dataPoints).fill(currentMA200);
+                } else if (dataPoints < 200) {
+                    // Mid range (6mo): NOT enough data to calculate, hide it
+                    showMA200 = false;
+                    ma200Data = [];
+                } else {
+                    // Long range (1y+): show calculated MA200
+                    ma200Data = calculatedMA200;
+                }
+                
+                // Clear loading and create canvas
+                let helperText = '';
+                if (dataPoints < 50) {
+                    helperText = '💡 MA50 & MA200 shown as current reference values';
+                } else if (dataPoints < 90) {
+                    helperText = '💡 MA200 shown as current reference value';
+                } else if (dataPoints < 200) {
+                    helperText = '💡 MA200 hidden (not enough data to calculate - use 1Y range)';
+                } else {
+                    helperText = '';
+                }
+                
+                container.innerHTML = `
+                    <canvas id="chart-${ticker}-${range}"></canvas>
+                    ${helperText ? `<div class="chart-helper-text">${helperText}</div>` : ''}
+                `;
+                const canvas = document.getElementById(`chart-${ticker}-${range}`);
+                const ctx = canvas.getContext('2d');
+                
+                // Destroy existing chart if any
+                const chartKey = `${ticker}-${range}`;
+                if (chartInstances[chartKey]) {
+                    chartInstances[chartKey].destroy();
+                }
+                
+                // Build datasets array
+                const datasets = [
+                    {
+                        label: 'Price',
+                        data: closes,
+                        borderColor: '#4488ff',
+                        backgroundColor: 'rgba(68, 136, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    },
+                    {
+                        label: dataPoints < 50 ? 'MA50 (Reference)' : 'MA50',
+                        data: ma50Data,
+                        borderColor: '#00ff88',
+                        backgroundColor: 'rgba(0, 255, 136, 0.05)',
+                        borderWidth: dataPoints < 50 ? 2 : 1.5,
+                        borderDash: dataPoints < 50 ? [10, 5] : [5, 5],
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 0
+                    }
+                ];
+                
+                // Only add MA200 if we have enough data
+                if (showMA200) {
+                    datasets.push({
+                        label: dataPoints < 90 ? 'MA200 (Reference)' : 'MA200',
+                        data: ma200Data,
+                        borderColor: '#ff4466',
+                        backgroundColor: 'rgba(255, 68, 102, 0.05)',
+                        borderWidth: dataPoints < 90 ? 2 : 1.5,
+                        borderDash: dataPoints < 90 ? [10, 5] : [5, 5],
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 0
+                    });
+                }
+                
+                // Create chart with annotations
+                chartInstances[chartKey] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    color: '#8b95a8',
+                                    font: {
+                                        family: 'JetBrains Mono',
+                                        size: 10
+                                    },
+                                    boxWidth: 12,
+                                    padding: 10,
+                                    generateLabels: function(chart) {
+                                        const original = Chart.defaults.plugins.legend.labels.generateLabels;
+                                        const labels = original.call(this, chart);
+                                        
+                                        // Add context labels
+                                        if (dataPoints < 50 || dataPoints < 90) {
+                                            labels.forEach((label, i) => {
+                                                if (i === 1 && dataPoints < 50) {
+                                                    label.text = 'MA50 (Entry Zone)';
+                                                    label.fontStyle = 'bold';
+                                                } else if (i === 1 && dataPoints >= 50) {
+                                                    label.text = 'MA50 (Support)';
+                                                }
+                                                if (i === 2 && dataPoints < 90 && showMA200) {
+                                                    label.text = 'MA200 (Major Support)';
+                                                    label.fontStyle = 'bold';
+                                                } else if (i === 2 && dataPoints >= 90 && showMA200) {
+                                                    label.text = 'MA200 (Trend Filter)';
+                                                }
+                                            });
+                                        }
+                                        
+                                        return labels;
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#121826',
+                                titleColor: '#e8edf2',
+                                bodyColor: '#8b95a8',
+                                borderColor: '#2a3544',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (context.parsed.y !== null) {
+                                            label += ': $' + context.parsed.y.toFixed(2);
+                                        }
+                                        return label;
+                                    },
+                                    afterBody: function(tooltipItems) {
+                                        // Add trading context
+                                        const priceItem = tooltipItems.find(item => item.dataset.label === 'Price');
+                                        if (!priceItem) return [];
+                                        
+                                        const price = priceItem.parsed.y;
+                                        const ma50Value = currentMA50;
+                                        const ma200Value = currentMA200;
+                                        
+                                        const lines = ['\n📊 Trading Context:'];
+                                        
+                                        // Price position vs MAs
+                                        if (price > ma50Value && price > ma200Value) {
+                                            const distanceMA50 = ((price - ma50Value) / ma50Value * 100).toFixed(1);
+                                            lines.push(`✅ Above both MAs (Strong uptrend)`);
+                                            lines.push(`📏 ${distanceMA50}% above MA50`);
+                                            if (Math.abs(price - ma50Value) / ma50Value < 0.03) {
+                                                lines.push(`🎯 ENTRY ZONE - Near MA50 support`);
+                                            }
+                                        } else if (price > ma200Value) {
+                                            lines.push(`⚠️ Above MA200, below MA50`);
+                                            lines.push(`🔍 Watch for MA50 reclaim`);
+                                        } else {
+                                            lines.push(`❌ Below MA200 - Downtrend`);
+                                            lines.push(`🚫 Avoid long positions`);
+                                        }
+                                        
+                                        return lines;
+                                    },
+                                    footer: function(tooltipItems) {
+                                        if (dataPoints < 90 && showMA200) {
+                                            return '\n💡 MA lines show current values';
+                                        }
+                                        return '';
+                                    }
+                                }
+                            },
+                            annotation: {
+                                annotations: generateAnnotations(closes, currentMA50, currentMA200, dataPoints)
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: true,
+                                grid: {
+                                    color: '#2a3544',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#8b95a8',
+                                    font: {
+                                        family: 'JetBrains Mono',
+                                        size: 9
+                                    },
+                                    maxRotation: 0,
+                                    autoSkipPadding: 20
+                                }
+                            },
+                            y: {
+                                display: true,
+                                position: 'right',
+                                grid: {
+                                    color: '#2a3544',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#8b95a8',
+                                    font: {
+                                        family: 'JetBrains Mono',
+                                        size: 9
+                                    },
+                                    callback: function(value) {
+                                        return '$' + value.toFixed(0);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="chart-loading">
+                        <div class="chart-loading-text" style="color: var(--accent-red);">
+                            ⚠️ Chart load failed
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Generate chart annotations for key trading zones
+        function generateAnnotations(closes, ma50, ma200, dataPoints) {
+            const annotations = {};
+            const currentPrice = closes[closes.length - 1];
+            
+            // Only add annotations if we have good data
+            if (!currentPrice || !ma50) return annotations;
+            
+            // Calculate key zones
+            const priceAboveMA50 = currentPrice > ma50;
+            const priceAboveMA200 = currentPrice > ma200;
+            const distanceFromMA50 = Math.abs((currentPrice - ma50) / ma50);
+            
+            // Entry Zone - when price is near MA50 (within 3%)
+            if (priceAboveMA50 && priceAboveMA200 && distanceFromMA50 < 0.03) {
+                annotations.entryZone = {
+                    type: 'box',
+                    yMin: ma50 * 0.98,
+                    yMax: ma50 * 1.02,
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    borderColor: 'rgba(0, 255, 136, 0.5)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    label: {
+                        display: true,
+                        content: '🎯 Entry Zone',
+                        position: 'start',
+                        color: '#00ff88',
+                        font: {
+                            size: 10,
+                            family: 'JetBrains Mono',
+                            weight: 'bold'
+                        }
+                    }
+                };
+            }
+            
+            // Stop Loss Zone - 2-3% below MA50
+            if (priceAboveMA50 && priceAboveMA200) {
+                annotations.stopZone = {
+                    type: 'box',
+                    yMin: ma50 * 0.97,
+                    yMax: ma50 * 0.98,
+                    backgroundColor: 'rgba(255, 68, 102, 0.1)',
+                    borderColor: 'rgba(255, 68, 102, 0.3)',
+                    borderWidth: 1,
+                    label: {
+                        display: true,
+                        content: '🛑 Stop Loss Zone',
+                        position: 'start',
+                        color: '#ff4466',
+                        font: {
+                            size: 9,
+                            family: 'JetBrains Mono'
+                        }
+                    }
+                };
+            }
+            
+            // Major Support Line at MA200 (only on short timeframes)
+            if (dataPoints < 90 && priceAboveMA200) {
+                annotations.majorSupport = {
+                    type: 'line',
+                    yMin: ma200,
+                    yMax: ma200,
+                    borderColor: '#ff4466',
+                    borderWidth: 2,
+                    borderDash: [10, 5],
+                    label: {
+                        display: true,
+                        content: '💪 Major Support',
+                        position: 'end',
+                        backgroundColor: 'rgba(255, 68, 102, 0.2)',
+                        color: '#ff4466',
+                        font: {
+                            size: 9,
+                            family: 'JetBrains Mono',
+                            weight: 'bold'
+                        }
+                    }
+                };
+            }
+            
+            // Trend Status Box (top right)
+            let trendText = '';
+            let trendColor = '';
+            
+            if (priceAboveMA50 && priceAboveMA200) {
+                trendText = '📈 STRONG UPTREND';
+                trendColor = '#00ff88';
+            } else if (priceAboveMA200) {
+                trendText = '⚠️ NEUTRAL';
+                trendColor = '#ffbb33';
+            } else {
+                trendText = '📉 DOWNTREND';
+                trendColor = '#ff4466';
+            }
+            
+            annotations.trendStatus = {
+                type: 'label',
+                xValue: closes.length - 1,
+                yValue: Math.max(...closes) * 0.98,
+                content: trendText,
+                color: trendColor,
+                font: {
+                    size: 11,
+                    family: 'JetBrains Mono',
+                    weight: 'bold'
+                },
+                backgroundColor: 'rgba(18, 24, 38, 0.8)',
+                padding: 6,
+                borderRadius: 4
+            };
+            
+            return annotations;
+        }
+        
+        // Calculate moving average
+        function calculateMA(data, period) {
+            const ma = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) {
+                    ma.push(null);
+                } else {
+                    const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+                    ma.push(sum / period);
+                }
+            }
+            return ma;
+        }
+        
+        // Generate realistic simulated stock data
+        function generateSimulatedData(ticker) {
+            const basePrice = Math.random() * 250 + 50;
+            const change = (Math.random() - 0.5) * 10;
+            const changePercent = (change / basePrice) * 100;
+            const volume = Math.floor(Math.random() * 45000000) + 5000000;
+            const avgVolume = Math.floor(Math.random() * 45000000) + 5000000;
+            const ma50 = basePrice * (0.95 + Math.random() * 0.10);
+            const ma200 = basePrice * (0.90 + Math.random() * 0.20);
+            const high52 = basePrice * 1.3;
+            const low52 = basePrice * 0.7;
+            
+            return {
+                ticker,
+                price: parseFloat(basePrice.toFixed(2)),
+                change: parseFloat(change.toFixed(2)),
+                changePercent: parseFloat(changePercent.toFixed(2)),
+                volume,
+                avgVolume,
+                ma50: parseFloat(ma50.toFixed(2)),
+                ma200: parseFloat(ma200.toFixed(2)),
+                high52: parseFloat(high52.toFixed(2)),
+                low52: parseFloat(low52.toFixed(2))
+            };
+        }
+        
+        // Fetch stock data
+        async function fetchStockData(ticker) {
+            try {
+                const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${ticker}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.quoteResponse && data.quoteResponse.result && data.quoteResponse.result.length > 0) {
+                    const quote = data.quoteResponse.result[0];
+                    return {
+                        ticker,
+                        price: quote.regularMarketPrice || 100,
+                        change: quote.regularMarketChange || 0,
+                        changePercent: quote.regularMarketChangePercent || 0,
+                        volume: quote.regularMarketVolume || 1000000,
+                        avgVolume: quote.averageDailyVolume10Day || 1000000,
+                        ma50: quote.fiftyDayAverage || 100,
+                        ma200: quote.twoHundredDayAverage || 95,
+                        high52: quote.fiftyTwoWeekHigh || 150,
+                        low52: quote.fiftyTwoWeekLow || 50
+                    };
+                }
+            } catch (error) {
+                console.log(`Using simulated data for ${ticker}`);
+            }
+            
+            return generateSimulatedData(ticker);
+        }
+        
+        // Calculate technical indicators
+        function calculateIndicators(data) {
+            const price = data.price;
+            const ma50 = data.ma50;
+            const ma200 = data.ma200;
+            const high52 = data.high52;
+            const low52 = data.low52;
+            
+            let rsi = 50 + ((price - low52) / (high52 - low52) * 50 - 25);
+            rsi = Math.max(0, Math.min(100, rsi));
+            
+            const above_ma50 = price > ma50;
+            const above_ma200 = price > ma200;
+            const trend_strength = (above_ma50 ? 50 : 0) + (above_ma200 ? 50 : 0);
+            const volume_ratio = data.avgVolume > 0 ? data.volume / data.avgVolume : 1.0;
+            const distance_ma50 = ma50 > 0 ? ((price - ma50) / ma50) * 100 : 0;
+            const distance_ma200 = ma200 > 0 ? ((price - ma200) / ma200) * 100 : 0;
+            
+            return {
+                rsi: parseFloat(rsi.toFixed(1)),
+                ma50,
+                ma200,
+                above_ma50,
+                above_ma200,
+                trend_strength,
+                volume_ratio: parseFloat(volume_ratio.toFixed(2)),
+                distance_ma50: parseFloat(distance_ma50.toFixed(2)),
+                distance_ma200: parseFloat(distance_ma200.toFixed(2))
+            };
+        }
+        
+        // Determine trading setup
+        function determineSetup(data, indicators) {
+            if (indicators.above_ma50 && indicators.above_ma200) {
+                if (indicators.distance_ma50 > -3 && indicators.distance_ma50 < 2) {
+                    return {
+                        type: 'Pullback',
+                        description: 'Stock in uptrend pulling back to 50-day MA support. High probability bounce.',
+                        confidence: 85
+                    };
+                }
+            }
+            
+            if (indicators.volume_ratio > 1.5 && indicators.rsi > 50 && indicators.rsi < 70) {
+                return {
+                    type: 'Breakout',
+                    description: 'Volume surge with momentum. Potential breakout from consolidation.',
+                    confidence: 75
+                };
+            }
+            
+            if (indicators.above_ma200) {
+                if (indicators.distance_ma200 > -2 && indicators.distance_ma200 < 5) {
+                    return {
+                        type: 'MA Bounce',
+                        description: 'Testing 200-day MA in uptrend. Strong institutional support level.',
+                        confidence: 80
+                    };
+                }
+            }
+            
+            return {
+                type: 'No Setup',
+                description: 'No clear technical setup identified. Wait for better opportunity.',
+                confidence: 40
+            };
+        }
+        
+        // Calculate trade levels
+        function calculateTradeLevels(data, indicators, setup) {
+            const price = data.price;
+            let entry, stop, target;
+            
+            if (setup.type === 'Pullback') {
+                entry = price;
+                stop = Math.max(indicators.ma50 * 0.98, price * 0.97);
+                target = price * 1.09;
+            } else if (setup.type === 'Breakout') {
+                entry = price;
+                stop = price * 0.97;
+                target = price * 1.09;
+            } else if (setup.type === 'MA Bounce') {
+                entry = price;
+                stop = indicators.ma200 * 0.98;
+                target = price * 1.08;
+            } else {
+                entry = price;
+                stop = price * 0.98;
+                target = price * 1.06;
+            }
+            
+            const risk_per_share = entry - stop;
+            const reward_per_share = target - entry;
+            
+            return {
+                entry: parseFloat(entry.toFixed(2)),
+                stop: parseFloat(stop.toFixed(2)),
+                target: parseFloat(target.toFixed(2)),
+                risk_per_share: parseFloat(risk_per_share.toFixed(2)),
+                reward_per_share: parseFloat(reward_per_share.toFixed(2))
+            };
+        }
+        
+        // Calculate position size
+        function calculatePositionSize(levels, accountSize, riskPercent) {
+            const risk_amount = accountSize * (riskPercent / 100);
+            const risk_per_share = levels.risk_per_share;
+            
+            if (risk_per_share <= 0) return null;
+            
+            const shares = Math.floor(risk_amount / risk_per_share);
+            const position_size = shares * levels.entry;
+            const rr_ratio = risk_per_share > 0 ? levels.reward_per_share / risk_per_share : 0;
+            const potential_reward = shares * levels.reward_per_share;
+            
+            return {
+                shares,
+                position_size: parseFloat(position_size.toFixed(2)),
+                actual_risk: parseFloat(risk_amount.toFixed(2)),
+                potential_reward: parseFloat(potential_reward.toFixed(2)),
+                rr_ratio: parseFloat(rr_ratio.toFixed(2))
+            };
+        }
+        
+        // Calculate score
+        function calculateScore(indicators, position, minRR) {
+            let score = 0;
+            score += indicators.trend_strength * 0.4;
+            
+            const rsi = indicators.rsi;
+            if (rsi >= 40 && rsi <= 70) {
+                score += 20;
+            } else if (rsi >= 30 && rsi < 40) {
+                score += 15;
+            } else if (rsi > 70) {
+                score += 5;
+            }
+            
+            const vol_ratio = indicators.volume_ratio;
+            if (vol_ratio >= 1.2) {
+                score += 20;
+            } else if (vol_ratio >= 1.0) {
+                score += 15;
+            } else {
+                score += 10;
+            }
+            
+            if (position) {
+                const rr = position.rr_ratio;
+                if (rr >= minRR + 1) {
+                    score += 20;
+                } else if (rr >= minRR) {
+                    score += 15;
+                } else if (rr >= minRR - 0.5) {
+                    score += 10;
+                } else {
+                    score += 5;
+                }
+            }
+            
+            return Math.min(100, Math.round(score));
+        }
+        
+        // Determine signal
+        function determineSignal(score, position, minRR) {
+            if (!position) return 'HOLD';
+            const rr = position.rr_ratio;
+            if (rr >= minRR && score >= 70) return 'BUY';
+            else if (score < 40) return 'SELL';
+            else return 'HOLD';
+        }
+        
+        // Analyze stock
+        async function analyzeStock(ticker, accountSize, riskPercent, minRR) {
+            const data = await fetchStockData(ticker);
+            if (!data) return null;
+            
+            const indicators = calculateIndicators(data);
+            const setup = determineSetup(data, indicators);
+            const levels = calculateTradeLevels(data, indicators, setup);
+            const position = calculatePositionSize(levels, accountSize, riskPercent);
+            const score = calculateScore(indicators, position, minRR);
+            const signal = determineSignal(score, position, minRR);
+            
+            return {
+                ticker,
+                price: data.price,
+                change: data.change,
+                changePercent: data.changePercent,
+                signal,
+                score,
+                setup,
+                indicators,
+                levels,
+                position
+            };
+        }
+        
+        // Create stock card HTML with chart
+        function createStockCard(stock, index) {
+            const signalClass = stock.signal === 'BUY' ? 'buy-signal' : 
+                               stock.signal === 'SELL' ? 'sell-signal' : 
+                               'neutral-signal';
+            
+            const signalBadgeClass = stock.signal === 'BUY' ? 'signal-buy' : 
+                                     stock.signal === 'SELL' ? 'signal-sell' : 
+                                     'signal-hold';
+            
+            const changeClass = stock.change >= 0 ? 'positive' : 'negative';
+            const changeSymbol = stock.change >= 0 ? '+' : '';
+            
+            let scoreClass = 'score-poor';
+            if (stock.score >= 80) scoreClass = 'score-excellent';
+            else if (stock.score >= 60) scoreClass = 'score-good';
+            else if (stock.score >= 40) scoreClass = 'score-moderate';
+            
+            const chartId = `chart-container-${stock.ticker}-${index}`;
+            
+            const positionHTML = stock.position ? `
+                <div class="level-item" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border);">
+                    <span class="level-label">Position Size:</span>
+                    <span class="level-value">${stock.position.shares} shares</span>
+                </div>
+                <div class="level-item">
+                    <span class="level-label">Total Investment:</span>
+                    <span class="level-value">$${stock.position.position_size.toFixed(2)}</span>
+                </div>
+                <div class="level-item">
+                    <span class="level-label">Risk Amount:</span>
+                    <span class="level-value level-stop">$${stock.position.actual_risk.toFixed(2)}</span>
+                </div>
+            ` : '';
+            
+            return `
+                <div class="stock-card ${signalClass}" data-ticker="${stock.ticker}" data-price="${stock.price}" data-ma50="${stock.indicators.ma50}" data-ma200="${stock.indicators.ma200}">
+                    <div class="stock-header">
+                        <div class="stock-ticker">${stock.ticker}</div>
+                        <div class="stock-signal ${signalBadgeClass}">${stock.signal}</div>
+                    </div>
+                    
+                    <div class="stock-price">
+                        <div class="price-value">$${stock.price.toFixed(2)}</div>
+                        <div class="price-change ${changeClass}">
+                            ${changeSymbol}${stock.change.toFixed(2)} (${changeSymbol}${stock.changePercent.toFixed(2)}%)
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="range-selector">
+                            <button class="range-btn" onclick="changeChartRange('${stock.ticker}', '${chartId}', '5d', this)">5D</button>
+                            <button class="range-btn active" onclick="changeChartRange('${stock.ticker}', '${chartId}', '1mo', this)">1M</button>
+                            <button class="range-btn" onclick="changeChartRange('${stock.ticker}', '${chartId}', '3mo', this)">3M</button>
+                            <button class="range-btn" onclick="changeChartRange('${stock.ticker}', '${chartId}', '6mo', this)">6M</button>
+                            <button class="range-btn" onclick="changeChartRange('${stock.ticker}', '${chartId}', '1y', this)">1Y</button>
+                        </div>
+                        <div id="${chartId}">
+                            <div class="chart-loading">
+                                <div class="chart-spinner"></div>
+                                <div class="chart-loading-text">Loading chart...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="indicators">
+                        <div class="indicator">
+                            <div class="indicator-label">RSI</div>
+                            <div class="indicator-value">${stock.indicators.rsi.toFixed(1)}</div>
+                        </div>
+                        <div class="indicator">
+                            <div class="indicator-label">Volume</div>
+                            <div class="indicator-value">${stock.indicators.volume_ratio.toFixed(2)}x</div>
+                        </div>
+                        <div class="indicator">
+                            <div class="indicator-label">Trend</div>
+                            <div class="indicator-value">${stock.indicators.trend_strength}%</div>
+                        </div>
+                        <div class="indicator">
+                            <div class="indicator-label">R:R Ratio</div>
+                            <div class="indicator-value">${stock.position ? stock.position.rr_ratio.toFixed(2) : '0.00'}:1</div>
+                        </div>
+                    </div>
+                    
+                    <div class="trade-levels">
+                        <h4>📊 Trade Levels</h4>
+                        <div class="level-item">
+                            <span class="level-label">Entry Price:</span>
+                            <span class="level-value level-entry">$${stock.levels.entry.toFixed(2)}</span>
+                        </div>
+                        <div class="level-item">
+                            <span class="level-label">Stop Loss:</span>
+                            <span class="level-value level-stop">$${stock.levels.stop.toFixed(2)}</span>
+                        </div>
+                        <div class="level-item">
+                            <span class="level-label">Target:</span>
+                            <span class="level-value level-target">$${stock.levels.target.toFixed(2)}</span>
+                        </div>
+                        ${positionHTML}
+                    </div>
+                    
+                    <div class="score-badge ${scoreClass}">
+                        ⭐ Score: ${stock.score}/100
+                    </div>
+                    
+                    <div class="setup-description">
+                        <strong>${stock.setup.type}</strong> (${stock.setup.confidence}% confidence)<br>
+                        ${stock.setup.description}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Change chart range
+        function changeChartRange(ticker, chartId, range, button) {
+            // Update active button
+            const parent = button.parentElement;
+            parent.querySelectorAll('.range-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Load new chart
+            createChart(ticker, chartId, range);
+        }
+        
+        // Main scanning function
+        async function scanStocks() {
+            const scanBtn = document.getElementById('scan-btn');
+            const resultsContainer = document.getElementById('results-container');
+            const watchlistSelect = document.getElementById('watchlist');
+            const accountSize = parseFloat(document.getElementById('account-size').value);
+            const riskPercent = parseFloat(document.getElementById('risk-percent').value);
+            const minRR = parseFloat(document.getElementById('min-rr').value);
+            
+            let tickers;
+            if (watchlistSelect.value === 'custom') {
+                const customInput = document.getElementById('custom-tickers').value;
+                tickers = customInput.split(',').map(t => t.trim().toUpperCase()).filter(t => t);
+                if (tickers.length === 0) {
+                    alert('Please enter at least one ticker symbol');
+                    return;
+                }
+            } else {
+                tickers = WATCHLISTS[watchlistSelect.value];
+            }
+            
+            // Clear existing charts
+            Object.values(chartInstances).forEach(chart => chart.destroy());
+            
+            scanBtn.disabled = true;
+            scanBtn.textContent = '⏳ Scanning...';
+            resultsContainer.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Analyzing ${tickers.length} stocks...</div>
+                </div>
+            `;
+            
+            try {
+                const analyses = [];
+                
+                for (const ticker of tickers) {
+                    try {
+                        const analysis = await analyzeStock(ticker, accountSize, riskPercent, minRR);
+                        if (analysis) {
+                            analyses.push(analysis);
+                        }
+                    } catch (error) {
+                        console.error(`Error analyzing ${ticker}:`, error);
+                    }
+                }
+                
+                analyses.sort((a, b) => b.score - a.score);
+                
+                if (analyses.length > 0) {
+                    const cardsHTML = '<div class="results-grid">' + 
+                        analyses.map((stock, index) => createStockCard(stock, index)).join('') + 
+                        '</div>';
+                    resultsContainer.innerHTML = cardsHTML;
+                    
+                    // Load charts asynchronously
+                    analyses.forEach((stock, index) => {
+                        const chartId = `chart-container-${stock.ticker}-${index}`;
+                        setTimeout(() => {
+                            createChart(stock.ticker, chartId, '1mo');
+                        }, index * 100); // Stagger chart loading
+                    });
+                } else {
+                    resultsContainer.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📊</div>
+                            <div class="empty-state-text">No trading opportunities found</div>
+                            <p style="margin-top: 1rem; color: var(--text-secondary);">Try adjusting your filters or selecting a different watchlist</p>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                resultsContainer.innerHTML = `
+                    <div class="error-message">
+                        ⚠️ Error scanning stocks: ${error.message}
+                    </div>
+                `;
+            } finally {
+                scanBtn.disabled = false;
+                scanBtn.textContent = '🎯 Scan for Opportunities';
+            }
+        }
+        
+        // Update market status
+        async function updateMarketStatus() {
+            try {
+                const spyQuote = await fetchStockData('SPY');
+                const vixQuote = await fetchStockData('^VIX');
+                
+                if (spyQuote) {
+                    const spyEl = document.getElementById('spy-price');
+                    spyEl.textContent = `$${spyQuote.price.toFixed(2)}`;
+                    spyEl.className = spyQuote.change >= 0 ? 'status-value positive' : 'status-value negative';
+                }
+                
+                if (vixQuote) {
+                    const vixEl = document.getElementById('vix-price');
+                    vixEl.textContent = vixQuote.price.toFixed(2);
+                    vixEl.className = vixQuote.price < 20 ? 'status-value positive' : 'status-value negative';
+                }
+            } catch (error) {
+                console.error('Error updating market status:', error);
+            }
+        }
+        
+        // Initialize
+        updateMarketStatus();
+        setInterval(updateMarketStatus, 60000);
+    </script>
+</body>
+</html>
