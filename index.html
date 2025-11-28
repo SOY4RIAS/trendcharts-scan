@@ -8,6 +8,7 @@
     <!-- Chart.js for beautiful charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
@@ -349,7 +350,7 @@
             background: var(--bg-tertiary);
             border-radius: 8px;
             position: relative;
-            height: 250px;
+            height: 320px; /* Increased from 250px for better visibility */
         }
         
         .chart-helper-text {
@@ -359,11 +360,207 @@
             margin-top: 0.5rem;
             text-align: center;
             font-style: italic;
-            opacity: 0.7;
+            opacity: 0.8;
+            padding: 0.25rem;
+            background: rgba(42, 53, 68, 0.3);
+            border-radius: 4px;
         }
         
         .chart-helper-text.hidden {
             display: none;
+        }
+        
+        .chart-controls-hint {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            margin-top: 0.25rem;
+            opacity: 0.6;
+            font-style: italic;
+        }
+        
+        /* Trend badge styling */
+        .trend-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+        
+        .trend-badge.uptrend {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--accent-green);
+            border: 1.5px solid var(--accent-green);
+        }
+        
+        .trend-badge.neutral {
+            background: rgba(255, 187, 51, 0.15);
+            color: var(--accent-yellow);
+            border: 1.5px solid var(--accent-yellow);
+        }
+        
+        .trend-badge.downtrend {
+            background: rgba(255, 68, 102, 0.15);
+            color: var(--accent-red);
+            border: 1.5px solid var(--accent-red);
+        }
+        
+        /* Chart popup modal */
+        .chart-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .chart-popup.active {
+            display: flex;
+        }
+        
+        .chart-popup-content {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            width: 95%;
+            max-width: 1400px;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .chart-popup-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chart-popup-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .chart-popup-close {
+            background: var(--accent-red);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .chart-popup-close:hover {
+            background: #ff6688;
+            transform: scale(1.05);
+        }
+        
+        .chart-popup-body {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        
+        .popup-chart-container {
+            height: 600px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .chart-expand-btn {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: rgba(68, 136, 255, 0.2);
+            border: 1.5px solid var(--accent-blue);
+            color: var(--accent-blue);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            z-index: 5;
+        }
+        
+        .chart-expand-btn:hover {
+            background: rgba(68, 136, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        /* Trading zones in popup */
+        .popup-zones {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .popup-zone {
+            background: var(--bg-tertiary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .popup-zone.entry {
+            border-color: var(--accent-green);
+        }
+        
+        .popup-zone.stop {
+            border-color: var(--accent-red);
+        }
+        
+        .popup-zone.target {
+            border-color: var(--accent-blue);
+        }
+        
+        .popup-zone-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .popup-zone-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 0.5rem;
+        }
+        
+        .popup-zone-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
         }
         
         .chart-loading {
@@ -815,6 +1012,7 @@
                 const closes = chartData.map(d => d.close);
                 const highs = chartData.map(d => d.high);
                 const lows = chartData.map(d => d.low);
+                const currentPrice = closes[closes.length - 1]; // Get last price for calculations
                 
                 // Calculate MA50 and MA200 for longer ranges
                 const calculatedMA50 = calculateMA(closes, 50);
@@ -846,21 +1044,39 @@
                     ma200Data = calculatedMA200;
                 }
                 
-                // Clear loading and create canvas
+                // Clear loading and create canvas with trend badge
+                const priceAboveMA50 = currentPrice > currentMA50;
+                const priceAboveMA200 = currentPrice > currentMA200;
+                
+                let trendClass = 'neutral';
+                let trendText = '⚠️ NEUTRAL';
+                if (priceAboveMA50 && priceAboveMA200) {
+                    trendClass = 'uptrend';
+                    trendText = '📈 STRONG UPTREND';
+                } else if (!priceAboveMA200) {
+                    trendClass = 'downtrend';
+                    trendText = '📉 DOWNTREND';
+                }
+                
                 let helperText = '';
                 if (dataPoints < 50) {
-                    helperText = '💡 MA50 & MA200 shown as current reference values';
+                    helperText = `💡 MA50 at $${currentMA50.toFixed(2)} & MA200 at $${currentMA200.toFixed(2)} shown as reference lines`;
                 } else if (dataPoints < 90) {
-                    helperText = '💡 MA200 shown as current reference value';
+                    helperText = `💡 MA200 at $${currentMA200.toFixed(2)} shown as reference line`;
                 } else if (dataPoints < 200) {
-                    helperText = '💡 MA200 hidden (not enough data to calculate - use 1Y range)';
+                    helperText = '⚠️ MA200 hidden - not enough data (switch to 1Y range to see MA200)';
                 } else {
-                    helperText = '';
+                    helperText = '✅ Both MAs calculated from historical data';
                 }
                 
                 container.innerHTML = `
+                    <button class="chart-expand-btn" onclick="openChartPopup('${ticker}', '${range}')">
+                        🔍 Expand Chart
+                    </button>
+                    <div class="trend-badge ${trendClass}">${trendText}</div>
                     <canvas id="chart-${ticker}-${range}"></canvas>
                     ${helperText ? `<div class="chart-helper-text">${helperText}</div>` : ''}
+                    <div class="chart-controls-hint">💡 Scroll to zoom • Ctrl+Drag to pan • Click 🔍 to expand</div>
                 `;
                 const canvas = document.getElementById(`chart-${ticker}-${range}`);
                 const ctx = canvas.getContext('2d');
@@ -936,29 +1152,28 @@
                                         family: 'JetBrains Mono',
                                         size: 10
                                     },
-                                    boxWidth: 12,
-                                    padding: 10,
+                                    boxWidth: 15,
+                                    padding: 12,
                                     generateLabels: function(chart) {
                                         const original = Chart.defaults.plugins.legend.labels.generateLabels;
                                         const labels = original.call(this, chart);
                                         
-                                        // Add context labels
-                                        if (dataPoints < 50 || dataPoints < 90) {
-                                            labels.forEach((label, i) => {
-                                                if (i === 1 && dataPoints < 50) {
-                                                    label.text = 'MA50 (Entry Zone)';
-                                                    label.fontStyle = 'bold';
-                                                } else if (i === 1 && dataPoints >= 50) {
-                                                    label.text = 'MA50 (Support)';
+                                        // Customize labels for better clarity
+                                        labels.forEach((label, i) => {
+                                            if (i === 1) {  // MA50
+                                                if (dataPoints < 50) {
+                                                    label.text = `MA50: $${currentMA50.toFixed(2)} (Entry Support)`;
+                                                } else {
+                                                    label.text = `MA50 (Entry Support)`;
                                                 }
-                                                if (i === 2 && dataPoints < 90 && showMA200) {
-                                                    label.text = 'MA200 (Major Support)';
-                                                    label.fontStyle = 'bold';
-                                                } else if (i === 2 && dataPoints >= 90 && showMA200) {
-                                                    label.text = 'MA200 (Trend Filter)';
+                                            } else if (i === 2 && showMA200) {  // MA200
+                                                if (dataPoints < 90) {
+                                                    label.text = `MA200: $${currentMA200.toFixed(2)} (Major Support)`;
+                                                } else {
+                                                    label.text = `MA200 (Major Support)`;
                                                 }
-                                            });
-                                        }
+                                            }
+                                        });
                                         
                                         return labels;
                                     }
@@ -1019,6 +1234,26 @@
                             },
                             annotation: {
                                 annotations: generateAnnotations(closes, currentMA50, currentMA200, dataPoints)
+                            },
+                            zoom: {
+                                zoom: {
+                                    wheel: {
+                                        enabled: true,
+                                        speed: 0.1
+                                    },
+                                    pinch: {
+                                        enabled: true
+                                    },
+                                    mode: 'x'
+                                },
+                                pan: {
+                                    enabled: true,
+                                    mode: 'x',
+                                    modifierKey: 'ctrl'
+                                },
+                                limits: {
+                                    x: {min: 'original', max: 'original'}
+                                }
                             }
                         },
                         scales: {
@@ -1076,114 +1311,94 @@
             const annotations = {};
             const currentPrice = closes[closes.length - 1];
             
-            // Only add annotations if we have good data
             if (!currentPrice || !ma50) return annotations;
             
-            // Calculate key zones
+            // Calculate positions
             const priceAboveMA50 = currentPrice > ma50;
             const priceAboveMA200 = currentPrice > ma200;
-            const distanceFromMA50 = Math.abs((currentPrice - ma50) / ma50);
+            const distanceFromMA50Percent = Math.abs((currentPrice - ma50) / ma50) * 100;
             
-            // Entry Zone - when price is near MA50 (within 3%)
-            if (priceAboveMA50 && priceAboveMA200 && distanceFromMA50 < 0.03) {
-                annotations.entryZone = {
-                    type: 'box',
-                    yMin: ma50 * 0.98,
-                    yMax: ma50 * 1.02,
-                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
-                    borderColor: 'rgba(0, 255, 136, 0.5)',
-                    borderWidth: 1,
-                    borderDash: [5, 5],
-                    label: {
-                        display: true,
-                        content: '🎯 Entry Zone',
-                        position: 'start',
-                        color: '#00ff88',
-                        font: {
-                            size: 10,
-                            family: 'JetBrains Mono',
-                            weight: 'bold'
-                        }
-                    }
-                };
-            }
-            
-            // Stop Loss Zone - 2-3% below MA50
+            // Only show annotations in uptrend
             if (priceAboveMA50 && priceAboveMA200) {
-                annotations.stopZone = {
+                
+                // GREEN ENTRY ZONE: When price is within 5% of MA50
+                if (distanceFromMA50Percent <= 5) {
+                    const entryZoneTop = ma50 * 1.025;  // 2.5% above MA50
+                    const entryZoneBottom = ma50 * 0.975;  // 2.5% below MA50
+                    
+                    // Entry zone box (shaded area)
+                    annotations.entryZoneBox = {
+                        type: 'box',
+                        xMin: 0,
+                        xMax: closes.length - 1,
+                        yMin: entryZoneBottom,
+                        yMax: entryZoneTop,
+                        backgroundColor: 'rgba(0, 255, 136, 0.05)',
+                        borderWidth: 0,
+                        drawTime: 'beforeDatasetsDraw'
+                    };
+                    
+                    // Entry zone border (top)
+                    annotations.entryZoneTop = {
+                        type: 'line',
+                        yMin: entryZoneTop,
+                        yMax: entryZoneTop,
+                        borderColor: 'rgba(0, 255, 136, 0.4)',
+                        borderWidth: 2,
+                        borderDash: [8, 4],
+                        drawTime: 'beforeDatasetsDraw'
+                    };
+                    
+                    // Entry zone border (bottom)
+                    annotations.entryZoneBottom = {
+                        type: 'line',
+                        yMin: entryZoneBottom,
+                        yMax: entryZoneBottom,
+                        borderColor: 'rgba(0, 255, 136, 0.4)',
+                        borderWidth: 2,
+                        borderDash: [8, 4],
+                        drawTime: 'beforeDatasetsDraw'
+                    };
+                }
+                
+                // RED STOP LOSS ZONE: 2-3% below MA50
+                const stopZoneTop = ma50 * 0.98;  // 2% below MA50
+                const stopZoneBottom = ma50 * 0.97;  // 3% below MA50
+                
+                // Stop zone box (shaded area)
+                annotations.stopZoneBox = {
                     type: 'box',
-                    yMin: ma50 * 0.97,
-                    yMax: ma50 * 0.98,
-                    backgroundColor: 'rgba(255, 68, 102, 0.1)',
-                    borderColor: 'rgba(255, 68, 102, 0.3)',
-                    borderWidth: 1,
-                    label: {
-                        display: true,
-                        content: '🛑 Stop Loss Zone',
-                        position: 'start',
-                        color: '#ff4466',
-                        font: {
-                            size: 9,
-                            family: 'JetBrains Mono'
-                        }
-                    }
+                    xMin: 0,
+                    xMax: closes.length - 1,
+                    yMin: stopZoneBottom,
+                    yMax: stopZoneTop,
+                    backgroundColor: 'rgba(255, 68, 102, 0.05)',
+                    borderWidth: 0,
+                    drawTime: 'beforeDatasetsDraw'
                 };
-            }
-            
-            // Major Support Line at MA200 (only on short timeframes)
-            if (dataPoints < 90 && priceAboveMA200) {
-                annotations.majorSupport = {
+                
+                // Stop zone border (top)
+                annotations.stopZoneTop = {
                     type: 'line',
-                    yMin: ma200,
-                    yMax: ma200,
-                    borderColor: '#ff4466',
+                    yMin: stopZoneTop,
+                    yMax: stopZoneTop,
+                    borderColor: 'rgba(255, 68, 102, 0.4)',
                     borderWidth: 2,
-                    borderDash: [10, 5],
-                    label: {
-                        display: true,
-                        content: '💪 Major Support',
-                        position: 'end',
-                        backgroundColor: 'rgba(255, 68, 102, 0.2)',
-                        color: '#ff4466',
-                        font: {
-                            size: 9,
-                            family: 'JetBrains Mono',
-                            weight: 'bold'
-                        }
-                    }
+                    borderDash: [6, 3],
+                    drawTime: 'beforeDatasetsDraw'
+                };
+                
+                // Stop zone border (bottom)
+                annotations.stopZoneBottom = {
+                    type: 'line',
+                    yMin: stopZoneBottom,
+                    yMax: stopZoneBottom,
+                    borderColor: 'rgba(255, 68, 102, 0.4)',
+                    borderWidth: 2,
+                    borderDash: [6, 3],
+                    drawTime: 'beforeDatasetsDraw'
                 };
             }
-            
-            // Trend Status Box (top right)
-            let trendText = '';
-            let trendColor = '';
-            
-            if (priceAboveMA50 && priceAboveMA200) {
-                trendText = '📈 STRONG UPTREND';
-                trendColor = '#00ff88';
-            } else if (priceAboveMA200) {
-                trendText = '⚠️ NEUTRAL';
-                trendColor = '#ffbb33';
-            } else {
-                trendText = '📉 DOWNTREND';
-                trendColor = '#ff4466';
-            }
-            
-            annotations.trendStatus = {
-                type: 'label',
-                xValue: closes.length - 1,
-                yValue: Math.max(...closes) * 0.98,
-                content: trendText,
-                color: trendColor,
-                font: {
-                    size: 11,
-                    family: 'JetBrains Mono',
-                    weight: 'bold'
-                },
-                backgroundColor: 'rgba(18, 24, 38, 0.8)',
-                padding: 6,
-                borderRadius: 4
-            };
             
             return annotations;
         }
@@ -1628,6 +1843,9 @@
                 
                 analyses.sort((a, b) => b.score - a.score);
                 
+                // Store globally for popup access
+                window.scannedStocks = analyses;
+                
                 if (analyses.length > 0) {
                     const cardsHTML = '<div class="results-grid">' + 
                         analyses.map((stock, index) => createStockCard(stock, index)).join('') + 
@@ -1688,6 +1906,172 @@
         // Initialize
         updateMarketStatus();
         setInterval(updateMarketStatus, 60000);
+    </script>
+    <!-- Chart Popup Modal -->
+    <div id="chartPopup" class="chart-popup">
+        <div class="chart-popup-content">
+            <div class="chart-popup-header">
+                <div class="chart-popup-title" id="popupTitle">Chart Analysis</div>
+                <button class="chart-popup-close" onclick="closeChartPopup()">✕</button>
+            </div>
+            <div class="chart-popup-body">
+                <div class="popup-chart-container">
+                    <canvas id="popupChart"></canvas>
+                </div>
+                
+                <div class="popup-zones" id="popupZones"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let popupChartInstance = null;
+        
+        function openChartPopup(ticker, range) {
+            const popup = document.getElementById('chartPopup');
+            const title = document.getElementById('popupTitle');
+            const stockCard = document.querySelector(`[data-ticker="${ticker}"]`);
+            
+            if (!stockCard) {
+                console.error('Stock card not found');
+                return;
+            }
+            
+            const stock = window.scannedStocks?.find(s => s.ticker === ticker);
+            if (!stock) {
+                console.error('Stock data not found in scannedStocks');
+                return;
+            }
+            
+            // Set title
+            title.textContent = `${ticker} - ${range.toUpperCase()} Detailed Analysis`;
+            
+            // Show popup
+            popup.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Create zones info with proper data
+            const entry = stock.levels?.entry || stock.price;
+            const stop = stock.levels?.stop || (stock.price * 0.97);
+            const target = stock.levels?.target || (stock.price * 1.03);
+            const riskPerShare = entry - stop;
+            const rewardPerShare = target - entry;
+            const rrRatio = stock.position?.rr_ratio || (rewardPerShare / riskPerShare);
+            const riskPercent = ((riskPerShare / entry) * 100).toFixed(1);
+            
+            const zonesHTML = `
+                <div class="popup-zone entry">
+                    <div class="popup-zone-title">🎯 Entry Zone</div>
+                    <div class="popup-zone-value" style="color: var(--accent-green)">$${entry.toFixed(2)}</div>
+                    <div class="popup-zone-desc">Buy when price touches MA50 support. Current MA50: $${stock.indicators?.ma50?.toFixed(2) || 'N/A'}</div>
+                </div>
+                
+                <div class="popup-zone stop">
+                    <div class="popup-zone-title">🛑 Stop Loss</div>
+                    <div class="popup-zone-value" style="color: var(--accent-red)">$${stop.toFixed(2)}</div>
+                    <div class="popup-zone-desc">Exit if price breaks below this level. Risk: $${riskPerShare.toFixed(2)} per share (${riskPercent}%)</div>
+                </div>
+                
+                <div class="popup-zone target">
+                    <div class="popup-zone-title">🎯 Target</div>
+                    <div class="popup-zone-value" style="color: var(--accent-blue)">$${target.toFixed(2)}</div>
+                    <div class="popup-zone-desc">Take profit zone. Reward: $${rewardPerShare.toFixed(2)} per share. R:R = ${rrRatio.toFixed(2)}:1</div>
+                </div>
+            `;
+            document.getElementById('popupZones').innerHTML = zonesHTML;
+            
+            // Recreate chart in popup with larger size
+            setTimeout(() => {
+                const canvas = document.getElementById('popupChart');
+                const ctx = canvas.getContext('2d');
+                
+                // Destroy existing popup chart
+                if (popupChartInstance) {
+                    popupChartInstance.destroy();
+                }
+                
+                // Get chart container ID
+                const chartContainerId = `chart-container-${ticker}-${window.scannedStocks.findIndex(s => s.ticker === ticker)}`;
+                const existingChartKey = `${ticker}-${range}`;
+                const existingChart = chartInstances[existingChartKey];
+                
+                if (existingChart) {
+                    const data = existingChart.data;
+                    const currentMA50 = parseFloat(stockCard?.dataset.ma50 || 100);
+                    const currentMA200 = parseFloat(stockCard?.dataset.ma200 || 95);
+                    const currentPrice = data.datasets[0].data[data.datasets[0].data.length - 1];
+                    
+                    // Create popup chart with enhanced config
+                    popupChartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: JSON.parse(JSON.stringify(data)), // Deep clone
+                        options: {
+                            ...JSON.parse(JSON.stringify(existingChart.options)),
+                            maintainAspectRatio: false,
+                            plugins: {
+                                ...existingChart.options.plugins,
+                                title: {
+                                    display: true,
+                                    text: `${ticker} - Price Action Analysis (${range.toUpperCase()})`,
+                                    color: '#e8edf2',
+                                    font: {
+                                        family: 'JetBrains Mono',
+                                        size: 18,
+                                        weight: 'bold'
+                                    },
+                                    padding: 20
+                                },
+                                legend: {
+                                    display: true,
+                                    position: 'top',
+                                    labels: {
+                                        color: '#8b95a8',
+                                        font: {
+                                            family: 'JetBrains Mono',
+                                            size: 13
+                                        },
+                                        boxWidth: 15,
+                                        padding: 15
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    // If chart doesn't exist yet, create it from scratch
+                    console.warn('Creating new chart for popup');
+                    createChart(ticker, 'popup-temp', range).then(() => {
+                        // Retry after chart is created
+                        setTimeout(() => openChartPopup(ticker, range), 500);
+                    });
+                }
+            }, 100);
+        }
+        
+        function closeChartPopup() {
+            const popup = document.getElementById('chartPopup');
+            popup.classList.remove('active');
+            document.body.style.overflow = 'auto';
+            
+            if (popupChartInstance) {
+                popupChartInstance.destroy();
+                popupChartInstance = null;
+            }
+        }
+        
+        // Close popup on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeChartPopup();
+            }
+        });
+        
+        // Close popup on outside click
+        document.getElementById('chartPopup')?.addEventListener('click', (e) => {
+            if (e.target.id === 'chartPopup') {
+                closeChartPopup();
+            }
+        });
     </script>
 </body>
 </html>
