@@ -1,0 +1,2170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeScan Pro - All-in-One Trading Analysis</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: #0a0e1a;
+            color: #e8edf2;
+            overflow-x: hidden;
+        }
+        
+        /* =============== SCANNER VIEW =============== */
+        #scanner-view {
+            display: block;
+        }
+        
+        #scanner-view.hidden {
+            display: none;
+        }
+        
+        .scanner-header {
+            background: linear-gradient(135deg, #1a2332 0%, #0a0e1a 100%);
+            padding: 2rem;
+            border-bottom: 3px solid #00ff88;
+            text-align: center;
+        }
+        
+        .scanner-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            background: linear-gradient(135deg, #00ff88 0%, #4488ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        
+        .scanner-subtitle {
+            font-size: 1rem;
+            color: #8b95a8;
+        }
+        
+        .scanner-controls {
+            background: rgba(18, 24, 38, 0.8);
+            padding: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 2px solid #2a3544;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .control-label {
+            font-size: 0.75rem;
+            color: #8b95a8;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        input, select {
+            padding: 0.75rem 1rem;
+            background: rgba(26, 35, 50, 0.8);
+            border: 2px solid #2a3544;
+            color: #e8edf2;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4488ff;
+            box-shadow: 0 0 20px rgba(68, 136, 255, 0.3);
+        }
+        
+        .scan-button {
+            padding: 0.75rem 2rem;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            border: none;
+            color: #0a0e1a;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+            margin-top: 1.5rem;
+        }
+        
+        .scan-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.5);
+        }
+        
+        .scan-button:disabled {
+            background: #2a3544;
+            color: #8b95a8;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        .results-container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .stock-card {
+            background: rgba(18, 24, 38, 0.9);
+            border: 2px solid #2a3544;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stock-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00ff88, #4488ff);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .stock-card:hover {
+            transform: translateY(-4px);
+            border-color: #4488ff;
+            box-shadow: 0 8px 30px rgba(68, 136, 255, 0.3);
+        }
+        
+        .stock-card:hover::before {
+            opacity: 1;
+        }
+        
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .stock-ticker {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: #00ff88;
+        }
+        
+        .stock-signal {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        
+        .signal-buy {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 2px solid #00ff88;
+        }
+        
+        .stock-price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 1rem;
+            color: #e8edf2;
+        }
+        
+        .stock-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .metric {
+            background: rgba(26, 35, 50, 0.6);
+            padding: 0.5rem;
+            border-radius: 6px;
+        }
+        
+        .metric-label {
+            font-size: 0.7rem;
+            color: #8b95a8;
+            margin-bottom: 0.25rem;
+        }
+        
+        .metric-value {
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .chart-container {
+            margin: 1rem 0;
+            height: 200px;
+            background: rgba(26, 35, 50, 0.4);
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .chart-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+        }
+        
+        .stock-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .action-button {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-whiteboard {
+            background: linear-gradient(135deg, #4488ff 0%, #6644ff 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(68, 136, 255, 0.3);
+        }
+        
+        .btn-whiteboard:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(68, 136, 255, 0.5);
+        }
+        
+        /* =============== WHITEBOARD VIEW =============== */
+        #whiteboard-view {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+        
+        #whiteboard-view.active {
+            display: block;
+        }
+        
+        #threejs-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        /* Whiteboard Header */
+        .wb-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(18, 24, 38, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 1.5rem;
+            border-bottom: 2px solid #2a3544;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .wb-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: #00ff88;
+        }
+        
+        .wb-close-btn {
+            background: #ff4466;
+            border: none;
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .wb-close-btn:hover {
+            background: #ff6688;
+            transform: scale(1.05);
+        }
+        
+        /* Toolbar */
+        .wb-toolbar {
+            position: absolute;
+            left: 1rem;
+            top: 6rem;
+            background: rgba(18, 24, 38, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #2a3544;
+            border-radius: 12px;
+            padding: 0.75rem 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 100;
+        }
+        
+        .tool-btn {
+            width: 60px;
+            height: 60px;
+            background: transparent;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            transition: all 0.2s;
+            color: #8b95a8;
+        }
+        
+        .tool-btn:hover {
+            background: rgba(68, 136, 255, 0.1);
+            border-color: #4488ff;
+            color: #e8edf2;
+        }
+        
+        .tool-btn.active {
+            background: rgba(68, 136, 255, 0.2);
+            border-color: #4488ff;
+            color: #4488ff;
+            box-shadow: 0 0 20px rgba(68, 136, 255, 0.3);
+        }
+        
+        .tool-icon {
+            font-size: 1.5rem;
+        }
+        
+        .tool-label {
+            font-size: 0.6rem;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        
+        /* Top Controls */
+        .wb-controls {
+            position: absolute;
+            top: 5.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(18, 24, 38, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #2a3544;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .wb-control-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .wb-control-label {
+            font-size: 0.7rem;
+            color: #8b95a8;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-right: 0.5rem;
+        }
+        
+        .control-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(26, 35, 50, 0.8);
+            border: 1.5px solid #2a3544;
+            color: #e8edf2;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+        
+        .control-btn:hover {
+            background: rgba(68, 136, 255, 0.1);
+            border-color: #4488ff;
+        }
+        
+        .control-btn.active {
+            background: #00ff88;
+            border-color: #00ff88;
+            color: #0a0e1a;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        .color-picker {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #2a3544;
+            border-radius: 6px;
+            cursor: pointer;
+            background: none;
+        }
+        
+        /* Sidebar */
+        .wb-sidebar {
+            position: absolute;
+            right: 0;
+            top: 5rem;
+            bottom: 0;
+            width: 320px;
+            background: rgba(18, 24, 38, 0.95);
+            backdrop-filter: blur(10px);
+            border-left: 2px solid #2a3544;
+            padding: 1.5rem;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .sidebar-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #8b95a8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .zone-card {
+            background: rgba(26, 35, 50, 0.6);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s;
+        }
+        
+        .zone-card:hover {
+            background: rgba(26, 35, 50, 0.8);
+            transform: translateX(-4px);
+        }
+        
+        .zone-card.entry { border-color: #00ff88; }
+        .zone-card.stop { border-color: #ff4466; }
+        .zone-card.target { border-color: #4488ff; }
+        
+        .zone-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            opacity: 0.7;
+        }
+        
+        .zone-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 0.5rem;
+        }
+        
+        .zone-desc {
+            font-size: 0.75rem;
+            color: #8b95a8;
+            line-height: 1.4;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        
+        .metric-card {
+            background: rgba(26, 35, 50, 0.6);
+            padding: 0.75rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        .metric-card:hover {
+            background: rgba(26, 35, 50, 0.8);
+        }
+        
+        .notes-area {
+            width: 100%;
+            min-height: 120px;
+            background: rgba(26, 35, 50, 0.6);
+            border: 1.5px solid #2a3544;
+            border-radius: 6px;
+            padding: 0.75rem;
+            color: #e8edf2;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.85rem;
+            resize: vertical;
+        }
+        
+        .notes-area:focus {
+            outline: none;
+            border-color: #4488ff;
+            box-shadow: 0 0 20px rgba(68, 136, 255, 0.2);
+        }
+        
+        /* Guide Overlay */
+        .guide-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(18, 24, 38, 0.98);
+            backdrop-filter: blur(10px);
+            border: 2px solid #4488ff;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            z-index: 200;
+            box-shadow: 0 0 40px rgba(68, 136, 255, 0.4);
+            display: none;
+        }
+        
+        .guide-overlay.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -45%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+        
+        .guide-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #4488ff;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .guide-step {
+            background: rgba(68, 136, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #4488ff;
+        }
+        
+        .guide-step-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4488ff;
+            margin-bottom: 0.5rem;
+        }
+        
+        .guide-step-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .guide-close {
+            background: #4488ff;
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            width: 100%;
+            margin-top: 1rem;
+            transition: all 0.2s;
+        }
+        
+        .guide-close:hover {
+            background: #66aaff;
+            box-shadow: 0 0 20px rgba(68, 136, 255, 0.5);
+        }
+        
+        /* Status Bar */
+        .wb-status {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 320px;
+            background: rgba(18, 24, 38, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 2px solid #2a3544;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-label {
+            color: #8b95a8;
+        }
+        
+        .status-value {
+            color: #00ff88;
+            font-weight: 700;
+        }
+        
+        /* Preview Hint */
+        .preview-hint {
+            position: absolute;
+            background: rgba(68, 136, 255, 0.95);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            pointer-events: none;
+            z-index: 150;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .preview-hint.active {
+            display: block;
+        }
+        
+        /* Annotation List */
+        .annotation-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .annotation-item {
+            background: rgba(26, 35, 50, 0.6);
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .annotation-item:hover {
+            background: rgba(26, 35, 50, 0.9);
+            transform: translateX(-4px);
+        }
+        
+        .annotation-delete {
+            background: transparent;
+            border: none;
+            color: #ff4466;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .annotation-delete:hover {
+            background: #ff4466;
+            color: white;
+        }
+        
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(68, 136, 255, 0.2);
+            border-top: 4px solid #4488ff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- =============== SCANNER VIEW =============== -->
+    <div id="scanner-view">
+        <div class="scanner-header">
+            <h1 class="scanner-title">TradeScan Pro</h1>
+            <p class="scanner-subtitle">AI-Powered Stock Scanner with Professional Analysis Whiteboard</p>
+        </div>
+        
+        <div class="scanner-controls">
+            <div class="control-group">
+                <label class="control-label">Tickers (comma-separated)</label>
+                <input type="text" id="tickersInput" value="AAPL,NVDA,AMD,TSLA,MSFT" style="width: 400px;">
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">Account Size</label>
+                <input type="number" id="accountSize" value="10000" min="1000" step="1000">
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">Risk %</label>
+                <input type="number" id="riskPercent" value="0.5" min="0.1" max="5" step="0.1">
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">Timeframe</label>
+                <select id="timeframe">
+                    <option value="5d">5 Days</option>
+                    <option value="1mo" selected>1 Month</option>
+                    <option value="3mo">3 Months</option>
+                    <option value="6mo">6 Months</option>
+                    <option value="1y">1 Year</option>
+                </select>
+            </div>
+            
+            <button class="scan-button" onclick="scanStocks()">🔍 Scan Stocks</button>
+        </div>
+        
+        <div class="results-container" id="resultsContainer">
+            <div class="loading" id="loadingState" style="display: none;">
+                <div class="spinner"></div>
+                <p>Scanning stocks and analyzing patterns...</p>
+            </div>
+            
+            <div class="results-grid" id="resultsGrid"></div>
+        </div>
+    </div>
+    
+    <!-- =============== WHITEBOARD VIEW =============== -->
+    <div id="whiteboard-view">
+        <canvas id="threejs-canvas"></canvas>
+        
+        <!-- Header -->
+        <div class="wb-header">
+            <div class="wb-title" id="wbTitle">TradeScan 3D - Analysis Whiteboard</div>
+            <button class="wb-close-btn" onclick="closeWhiteboard()">← Back to Scanner</button>
+        </div>
+        
+        <!-- Toolbar -->
+        <div class="wb-toolbar">
+            <button class="tool-btn active" data-tool="select" onclick="selectTool('select', this)">
+                <div class="tool-icon">👆</div>
+                <div class="tool-label">Select</div>
+            </button>
+            
+            <button class="tool-btn" data-tool="pan" onclick="selectTool('pan', this)">
+                <div class="tool-icon">✋</div>
+                <div class="tool-label">Pan</div>
+            </button>
+            
+            <button class="tool-btn" data-tool="draw" onclick="selectTool('draw', this)">
+                <div class="tool-icon">✏️</div>
+                <div class="tool-label">Draw</div>
+            </button>
+            
+            <button class="tool-btn" data-tool="line" onclick="selectTool('line', this)">
+                <div class="tool-icon">📏</div>
+                <div class="tool-label">Line</div>
+            </button>
+            
+            <button class="tool-btn" data-tool="horizontal" onclick="selectTool('horizontal', this)">
+                <div class="tool-icon">━</div>
+                <div class="tool-label">H-Line</div>
+            </button>
+            
+            <button class="tool-btn" data-tool="trendline" onclick="selectTool('trendline', this)">
+                <div class="tool-icon">📈</div>
+                <div class="tool-label">Trend</div>
+            </button>
+            
+            <button class="tool-btn" data-tool="rectangle" onclick="selectTool('rectangle', this)">
+                <div class="tool-icon">▭</div>
+                <div class="tool-label">Zone</div>
+            </button>
+            
+            <button class="tool-btn" data-tool="fibonacci" onclick="selectTool('fibonacci', this)">
+                <div class="tool-icon">📐</div>
+                <div class="tool-label">Fib</div>
+            </button>
+            
+            <button class="tool-btn" data-tool="text" onclick="selectTool('text', this)">
+                <div class="tool-icon">📝</div>
+                <div class="tool-label">Text</div>
+            </button>
+            
+            <button class="tool-btn" data-tool="measure" onclick="selectTool('measure', this)">
+                <div class="tool-icon">📊</div>
+                <div class="tool-label">Measure</div>
+            </button>
+        </div>
+        
+        <!-- Top Controls -->
+        <div class="wb-controls">
+            <div class="wb-control-group">
+                <span class="wb-control-label">Timeframe:</span>
+                <button class="control-btn" onclick="changeWhiteboardTimeframe('5d', this)">5D</button>
+                <button class="control-btn active" onclick="changeWhiteboardTimeframe('1mo', this)">1M</button>
+                <button class="control-btn" onclick="changeWhiteboardTimeframe('3mo', this)">3M</button>
+                <button class="control-btn" onclick="changeWhiteboardTimeframe('6mo', this)">6M</button>
+                <button class="control-btn" onclick="changeWhiteboardTimeframe('1y', this)">1Y</button>
+            </div>
+            
+            <div class="wb-control-group">
+                <span class="wb-control-label">Color:</span>
+                <input type="color" id="drawColor" class="color-picker" value="#ffbb33">
+            </div>
+            
+            <div class="wb-control-group">
+                <button class="control-btn" onclick="undoAnnotation()">↶ Undo</button>
+                <button class="control-btn" onclick="redoAnnotation()">↷ Redo</button>
+                <button class="control-btn" onclick="clearAllAnnotations()">🗑️ Clear</button>
+                <button class="control-btn" onclick="saveAnalysis()">💾 Save</button>
+            </div>
+        </div>
+        
+        <!-- Guide Overlay -->
+        <div class="guide-overlay" id="guideOverlay">
+            <div class="guide-title" id="guideTitle">📏 Line Tool</div>
+            <div id="guideSteps"></div>
+            <button class="guide-close" onclick="closeGuide()">Got it!</button>
+        </div>
+        
+        <!-- Preview Hint -->
+        <div class="preview-hint" id="previewHint">Click to set first point</div>
+        
+        <!-- Sidebar -->
+        <div class="wb-sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">🎯 Trading Zones</div>
+                <div id="tradingZones"></div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">📊 Key Metrics</div>
+                <div class="metrics-grid" id="keyMetrics"></div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">📝 Your Annotations</div>
+                <div class="annotation-list" id="annotationList"></div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">💭 Analysis Notes</div>
+                <textarea class="notes-area" id="analysisNotes" placeholder="Add your trading notes here..."></textarea>
+            </div>
+        </div>
+        
+        <!-- Status Bar -->
+        <div class="wb-status">
+            <div class="status-item">
+                <span class="status-label">Price:</span>
+                <span class="status-value" id="statusPrice">$0.00</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Tool:</span>
+                <span class="status-value" id="statusTool">Select</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Zoom:</span>
+                <span class="status-value" id="statusZoom">100%</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Annotations:</span>
+                <span class="status-value" id="statusCount">0</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js"></script>
+    
+    <script>
+        // ==================== GLOBAL STATE ====================
+        let scannedStocks = [];
+        let currentWhiteboardStock = null;
+        let currentWhiteboardRange = '1mo';
+        
+        // Three.js Scene
+        let scene, camera, renderer;
+        let chartGroup, annotationsGroup, previewGroup, crosshairGroup;
+        let raycaster, mouse;
+        
+        // Whiteboard State
+        let currentTool = 'select';
+        let isDrawing = false;
+        let drawingPoints = [];
+        let annotations = [];
+        let undoStack = [];
+        let redoStack = [];
+        let chartData = null;
+        let previewObjects = [];
+        let lastMousePos = null;
+        
+        // Chart dimensions
+        let chartWidth = 1000;
+        let chartHeight = 600;
+        let chartOffsetX = -80;
+        let chartOffsetY = 0;
+        
+        // Tool guides
+        const toolGuides = {
+            line: {
+                title: '📏 Line Tool',
+                steps: [
+                    { number: '1', text: 'Click on the chart to set the first point' },
+                    { number: '2', text: 'Move your mouse to see a live preview of the line' },
+                    { number: '3', text: 'Click again to set the second point and complete the line' }
+                ]
+            },
+            horizontal: {
+                title: '━ Horizontal Line',
+                steps: [
+                    { number: '1', text: 'Click anywhere on the chart' },
+                    { number: '2', text: 'A horizontal line will be drawn at that price level' },
+                    { number: '3', text: 'Perfect for marking support and resistance' }
+                ]
+            },
+            trendline: {
+                title: '📈 Trend Line',
+                steps: [
+                    { number: '1', text: 'Click on the first swing low/high' },
+                    { number: '2', text: 'Move to see the trend line preview' },
+                    { number: '3', text: 'Click on the second swing low/high to confirm' }
+                ]
+            },
+            rectangle: {
+                title: '▭ Zone Tool',
+                steps: [
+                    { number: '1', text: 'Click and hold to start drawing' },
+                    { number: '2', text: 'Drag to see the zone preview' },
+                    { number: '3', text: 'Release to create a shaded support/resistance zone' }
+                ]
+            },
+            fibonacci: {
+                title: '📐 Fibonacci Retracement',
+                steps: [
+                    { number: '1', text: 'Click on the swing high' },
+                    { number: '2', text: 'See all Fib levels in the preview' },
+                    { number: '3', text: 'Click on the swing low to confirm (or vice versa)' }
+                ]
+            },
+            measure: {
+                title: '📊 Measure Tool',
+                steps: [
+                    { number: '1', text: 'Click on the starting price' },
+                    { number: '2', text: 'Move to see distance and percentage in real-time' },
+                    { number: '3', text: 'Click to finish - shows exact price change and %' }
+                ]
+            },
+            draw: {
+                title: '✏️ Freehand Draw',
+                steps: [
+                    { number: '1', text: 'Click and hold to start drawing' },
+                    { number: '2', text: 'Drag your mouse to draw freehand' },
+                    { number: '3', text: 'Release to finish - great for circling patterns' }
+                ]
+            }
+        };
+        
+        // ==================== SCANNER FUNCTIONS ====================
+        
+        async function scanStocks() {
+            const tickers = document.getElementById('tickersInput').value.split(',').map(t => t.trim());
+            const accountSize = parseFloat(document.getElementById('accountSize').value);
+            const riskPercent = parseFloat(document.getElementById('riskPercent').value);
+            const range = document.getElementById('timeframe').value;
+            
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('resultsGrid').innerHTML = '';
+            
+            scannedStocks = [];
+            
+            for (const ticker of tickers) {
+                const analysis = await analyzeStock(ticker, accountSize, riskPercent, range);
+                if (analysis) {
+                    scannedStocks.push(analysis);
+                }
+            }
+            
+            // Sort by score
+            scannedStocks.sort((a, b) => b.score - a.score);
+            
+            document.getElementById('loadingState').style.display = 'none';
+            displayResults();
+        }
+        
+        async function analyzeStock(ticker, accountSize, riskPercent, range) {
+            // Simulate stock analysis
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const basePrice = Math.random() * 300 + 50;
+            
+            // Generate mock data
+            const price = basePrice;
+            const ma50 = price * (0.95 + Math.random() * 0.1);
+            const ma200 = price * (0.90 + Math.random() * 0.15);
+            const rsi = Math.random() * 100;
+            const volumeRatio = 0.5 + Math.random() * 2;
+            
+            // Determine setup
+            let setup = 'pullback';
+            let signal = 'BUY';
+            
+            // Calculate trade levels
+            const entry = price;
+            const stop = Math.max(ma50 * 0.98, price * 0.97);
+            const target = price * 1.09;
+            
+            const riskPerShare = entry - stop;
+            const rewardPerShare = target - entry;
+            const rrRatio = rewardPerShare / riskPerShare;
+            
+            const riskAmount = accountSize * (riskPercent / 100);
+            const shares = Math.floor(riskAmount / riskPerShare);
+            const positionSize = shares * entry;
+            
+            // Calculate score
+            const score = Math.round(50 + (rrRatio * 10) + (volumeRatio * 5) + ((100 - Math.abs(rsi - 50)) / 2));
+            
+            // Generate price history
+            const dataPoints = range === '5d' ? 40 : range === '1mo' ? 30 : range === '3mo' ? 90 : range === '6mo' ? 180 : 365;
+            const priceHistory = generatePriceHistory(price, dataPoints);
+            
+            return {
+                ticker,
+                price,
+                signal,
+                setup,
+                score,
+                levels: { entry, stop, target },
+                indicators: { ma50, ma200, rsi, volume_ratio: volumeRatio },
+                position: { 
+                    shares, 
+                    position_size: positionSize, 
+                    risk_amount: riskAmount,
+                    rr_ratio: rrRatio,
+                    potential_reward: shares * rewardPerShare
+                },
+                priceHistory,
+                range
+            };
+        }
+        
+        function generatePriceHistory(currentPrice, points) {
+            const prices = [];
+            let price = currentPrice * 0.9;
+            
+            for (let i = 0; i < points; i++) {
+                const change = (Math.random() - 0.4) * 0.02 * price;
+                price += change;
+                prices.push(price);
+            }
+            
+            // Smooth to end at current price
+            const diff = currentPrice - prices[prices.length - 1];
+            for (let i = 0; i < prices.length; i++) {
+                prices[i] += (diff * i) / prices.length;
+            }
+            
+            return prices;
+        }
+        
+        function displayResults() {
+            const grid = document.getElementById('resultsGrid');
+            
+            grid.innerHTML = scannedStocks.map(stock => `
+                <div class="stock-card">
+                    <div class="stock-header">
+                        <div class="stock-ticker">${stock.ticker}</div>
+                        <div class="stock-signal signal-${stock.signal.toLowerCase()}">${stock.signal}</div>
+                    </div>
+                    
+                    <div class="stock-price">$${stock.price.toFixed(2)}</div>
+                    
+                    <div class="stock-metrics">
+                        <div class="metric">
+                            <div class="metric-label">Score</div>
+                            <div class="metric-value">${stock.score}/100</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">R:R</div>
+                            <div class="metric-value">${stock.position.rr_ratio.toFixed(2)}:1</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">RSI</div>
+                            <div class="metric-value">${stock.indicators.rsi.toFixed(1)}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Volume</div>
+                            <div class="metric-value">${stock.indicators.volume_ratio.toFixed(2)}x</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas class="chart-canvas" id="chart-${stock.ticker}"></canvas>
+                    </div>
+                    
+                    <div class="stock-actions">
+                        <button class="action-button btn-whiteboard" onclick="openWhiteboard('${stock.ticker}')">
+                            🎨 Open Whiteboard
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Draw mini charts
+            scannedStocks.forEach(stock => {
+                drawMiniChart(stock);
+            });
+        }
+        
+        function drawMiniChart(stock) {
+            const canvas = document.getElementById(`chart-${stock.ticker}`);
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth * 2;
+            canvas.height = canvas.offsetHeight * 2;
+            ctx.scale(2, 2);
+            
+            const width = canvas.offsetWidth;
+            const height = canvas.offsetHeight;
+            const prices = stock.priceHistory;
+            const minPrice = Math.min(...prices) * 0.98;
+            const maxPrice = Math.max(...prices) * 1.02;
+            const priceRange = maxPrice - minPrice;
+            
+            // Draw price line
+            ctx.strokeStyle = '#4488ff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            prices.forEach((price, i) => {
+                const x = (i / (prices.length - 1)) * width;
+                const y = height - ((price - minPrice) / priceRange) * height;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.stroke();
+            
+            // Draw MA50
+            const ma50Y = height - ((stock.indicators.ma50 - minPrice) / priceRange) * height;
+            ctx.strokeStyle = '#00ff88';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 3]);
+            ctx.beginPath();
+            ctx.moveTo(0, ma50Y);
+            ctx.lineTo(width, ma50Y);
+            ctx.stroke();
+            
+            // Draw MA200
+            const ma200Y = height - ((stock.indicators.ma200 - minPrice) / priceRange) * height;
+            ctx.strokeStyle = '#ff4466';
+            ctx.setLineDash([5, 3]);
+            ctx.beginPath();
+            ctx.moveTo(0, ma200Y);
+            ctx.lineTo(width, ma200Y);
+            ctx.stroke();
+        }
+        
+        // ==================== WHITEBOARD FUNCTIONS ====================
+        
+        function openWhiteboard(ticker) {
+            const stock = scannedStocks.find(s => s.ticker === ticker);
+            if (!stock) return;
+            
+            currentWhiteboardStock = stock;
+            currentWhiteboardRange = stock.range;
+            
+            document.getElementById('scanner-view').classList.add('hidden');
+            document.getElementById('whiteboard-view').classList.add('active');
+            
+            initWhiteboard();
+        }
+        
+        function closeWhiteboard() {
+            document.getElementById('whiteboard-view').classList.remove('active');
+            document.getElementById('scanner-view').classList.remove('hidden');
+            
+            // Cleanup Three.js
+            if (renderer) {
+                renderer.dispose();
+                scene = null;
+                renderer = null;
+            }
+            
+            annotations = [];
+            drawingPoints = [];
+        }
+        
+        function initWhiteboard() {
+            // Update title
+            document.getElementById('wbTitle').textContent = `${currentWhiteboardStock.ticker} - 3D Analysis Whiteboard`;
+            
+            // Initialize Three.js
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0e1a);
+            
+            // Calculate chart dimensions
+            chartWidth = window.innerWidth - 450;
+            chartHeight = window.innerHeight - 250;
+            chartOffsetX = -80;
+            
+            // Camera
+            camera = new THREE.OrthographicCamera(
+                -window.innerWidth / 2,
+                window.innerWidth / 2,
+                window.innerHeight / 2,
+                -window.innerHeight / 2,
+                0.1,
+                1000
+            );
+            camera.position.z = 10;
+            
+            // Renderer
+            const canvas = document.getElementById('threejs-canvas');
+            renderer = new THREE.WebGLRenderer({
+                canvas: canvas,
+                antialias: true,
+                alpha: false
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            
+            // Groups
+            chartGroup = new THREE.Group();
+            annotationsGroup = new THREE.Group();
+            previewGroup = new THREE.Group();
+            crosshairGroup = new THREE.Group();
+            scene.add(chartGroup);
+            scene.add(annotationsGroup);
+            scene.add(previewGroup);
+            scene.add(crosshairGroup);
+            
+            // Raycaster
+            raycaster = new THREE.Raycaster();
+            raycaster.params.Line.threshold = 5;
+            mouse = new THREE.Vector2();
+            
+            // Create crosshair
+            createCrosshair();
+            
+            // Events
+            window.addEventListener('resize', onWindowResize);
+            canvas.addEventListener('mousedown', onMouseDown);
+            canvas.addEventListener('mousemove', onMouseMove);
+            canvas.addEventListener('mouseup', onMouseUp);
+            canvas.addEventListener('wheel', onWheel);
+            canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+            
+            // Generate chart data
+            generateChartData(currentWhiteboardRange);
+            
+            // Populate sidebar
+            populateSidebar();
+            
+            // Draw chart
+            drawChart();
+            
+            // Start animation
+            animate();
+        }
+        
+        function createCrosshair() {
+            const hGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-20, 0, 0),
+                new THREE.Vector3(20, 0, 0)
+            ]);
+            const hMat = new THREE.LineBasicMaterial({ color: 0x4488ff, opacity: 0.6, transparent: true });
+            const hLine = new THREE.Line(hGeo, hMat);
+            
+            const vGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(0, -20, 0),
+                new THREE.Vector3(0, 20, 0)
+            ]);
+            const vMat = new THREE.LineBasicMaterial({ color: 0x4488ff, opacity: 0.6, transparent: true });
+            const vLine = new THREE.Line(vGeo, vMat);
+            
+            crosshairGroup.add(hLine);
+            crosshairGroup.add(vLine);
+            crosshairGroup.visible = false;
+        }
+        
+        function updateCrosshair(position) {
+            if (!crosshairGroup || !position) {
+                if (crosshairGroup) crosshairGroup.visible = false;
+                return;
+            }
+            
+            crosshairGroup.position.copy(position);
+            crosshairGroup.visible = currentTool !== 'select' && currentTool !== 'pan';
+        }
+        
+        function generateChartData(range) {
+            chartData = {
+                prices: currentWhiteboardStock.priceHistory,
+                dates: Array.from({ length: currentWhiteboardStock.priceHistory.length }, (_, i) => i),
+                minPrice: Math.min(...currentWhiteboardStock.priceHistory) * 0.98,
+                maxPrice: Math.max(...currentWhiteboardStock.priceHistory) * 1.02
+            };
+        }
+        
+        function drawChart() {
+            while (chartGroup.children.length > 0) {
+                chartGroup.remove(chartGroup.children[0]);
+            }
+            
+            if (!chartData) return;
+            
+            const { prices, minPrice, maxPrice } = chartData;
+            const priceRange = maxPrice - minPrice;
+            
+            // Grid
+            const gridMaterial = new THREE.LineBasicMaterial({ 
+                color: 0x2a3544, 
+                opacity: 0.5, 
+                transparent: true,
+                linewidth: 1
+            });
+            
+            // Horizontal grid lines
+            for (let i = 0; i <= 10; i++) {
+                const y = (i / 10) * chartHeight - chartHeight / 2 + chartOffsetY;
+                const geometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(-chartWidth / 2 + chartOffsetX, y, 0),
+                    new THREE.Vector3(chartWidth / 2 + chartOffsetX, y, 0)
+                ]);
+                const line = new THREE.Line(geometry, gridMaterial);
+                chartGroup.add(line);
+            }
+            
+            // Vertical grid lines
+            for (let i = 0; i <= 10; i++) {
+                const x = (i / 10) * chartWidth - chartWidth / 2 + chartOffsetX;
+                const geometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(x, -chartHeight / 2 + chartOffsetY, 0),
+                    new THREE.Vector3(x, chartHeight / 2 + chartOffsetY, 0)
+                ]);
+                const line = new THREE.Line(geometry, gridMaterial);
+                chartGroup.add(line);
+            }
+            
+            // Price line
+            const pricePoints = prices.map((price, i) => {
+                const x = (i / (prices.length - 1)) * chartWidth - chartWidth / 2 + chartOffsetX;
+                const normalizedPrice = (price - minPrice) / priceRange;
+                const y = normalizedPrice * chartHeight - chartHeight / 2 + chartOffsetY;
+                return new THREE.Vector3(x, y, 0);
+            });
+            
+            const priceGeometry = new THREE.BufferGeometry().setFromPoints(pricePoints);
+            const priceMaterial = new THREE.LineBasicMaterial({ 
+                color: 0x4488ff, 
+                linewidth: 3
+            });
+            const priceLine = new THREE.Line(priceGeometry, priceMaterial);
+            chartGroup.add(priceLine);
+            
+            // MA50 line
+            if (currentWhiteboardStock.indicators.ma50) {
+                const normalizedMA50 = (currentWhiteboardStock.indicators.ma50 - minPrice) / priceRange;
+                const ma50Y = normalizedMA50 * chartHeight - chartHeight / 2 + chartOffsetY;
+                const ma50Geometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(-chartWidth / 2 + chartOffsetX, ma50Y, 0),
+                    new THREE.Vector3(chartWidth / 2 + chartOffsetX, ma50Y, 0)
+                ]);
+                const ma50Material = new THREE.LineDashedMaterial({
+                    color: 0x00ff88,
+                    linewidth: 2,
+                    dashSize: 10,
+                    gapSize: 5
+                });
+                const ma50Line = new THREE.Line(ma50Geometry, ma50Material);
+                ma50Line.computeLineDistances();
+                chartGroup.add(ma50Line);
+            }
+            
+            // MA200 line
+            if (currentWhiteboardStock.indicators.ma200) {
+                const normalizedMA200 = (currentWhiteboardStock.indicators.ma200 - minPrice) / priceRange;
+                const ma200Y = normalizedMA200 * chartHeight - chartHeight / 2 + chartOffsetY;
+                const ma200Geometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(-chartWidth / 2 + chartOffsetX, ma200Y, 0),
+                    new THREE.Vector3(chartWidth / 2 + chartOffsetX, ma200Y, 0)
+                ]);
+                const ma200Material = new THREE.LineDashedMaterial({
+                    color: 0xff4466,
+                    linewidth: 2,
+                    dashSize: 10,
+                    gapSize: 5
+                });
+                const ma200Line = new THREE.Line(ma200Geometry, ma200Material);
+                ma200Line.computeLineDistances();
+                chartGroup.add(ma200Line);
+            }
+        }
+        
+        function populateSidebar() {
+            const stock = currentWhiteboardStock;
+            
+            // Trading zones
+            const zonesHTML = `
+                <div class="zone-card entry">
+                    <div class="zone-title">🎯 Entry Zone</div>
+                    <div class="zone-value" style="color: #00ff88">$${stock.levels.entry.toFixed(2)}</div>
+                    <div class="zone-desc">Buy at MA50: $${stock.indicators.ma50.toFixed(2)}</div>
+                </div>
+                <div class="zone-card stop">
+                    <div class="zone-title">🛑 Stop Loss</div>
+                    <div class="zone-value" style="color: #ff4466">$${stock.levels.stop.toFixed(2)}</div>
+                    <div class="zone-desc">Risk: $${(stock.levels.entry - stock.levels.stop).toFixed(2)}/share</div>
+                </div>
+                <div class="zone-card target">
+                    <div class="zone-title">🎯 Target</div>
+                    <div class="zone-value" style="color: #4488ff">$${stock.levels.target.toFixed(2)}</div>
+                    <div class="zone-desc">R:R ${stock.position.rr_ratio.toFixed(2)}:1</div>
+                </div>
+            `;
+            document.getElementById('tradingZones').innerHTML = zonesHTML;
+            
+            // Metrics
+            const metricsHTML = `
+                <div class="metric-card">
+                    <div class="metric-label">RSI</div>
+                    <div class="metric-value">${stock.indicators.rsi.toFixed(1)}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Volume</div>
+                    <div class="metric-value">${stock.indicators.volume_ratio.toFixed(2)}x</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Score</div>
+                    <div class="metric-value">${stock.score}/100</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Signal</div>
+                    <div class="metric-value">${stock.signal}</div>
+                </div>
+            `;
+            document.getElementById('keyMetrics').innerHTML = metricsHTML;
+            
+            updateAnnotationList();
+        }
+        
+        function changeWhiteboardTimeframe(range, button) {
+            document.querySelectorAll('.wb-controls .control-btn').forEach(btn => {
+                if (btn.textContent.includes('D') || btn.textContent.includes('M') || btn.textContent.includes('Y')) {
+                    btn.classList.remove('active');
+                }
+            });
+            button.classList.add('active');
+            
+            currentWhiteboardRange = range;
+            
+            // Regenerate price history for new timeframe
+            const dataPoints = range === '5d' ? 40 : range === '1mo' ? 30 : range === '3mo' ? 90 : range === '6mo' ? 180 : 365;
+            currentWhiteboardStock.priceHistory = generatePriceHistory(currentWhiteboardStock.price, dataPoints);
+            
+            generateChartData(range);
+            drawChart();
+        }
+        
+        // Mouse event handlers
+        function updateMouse(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        }
+        
+        function getIntersection() {
+            raycaster.setFromCamera(mouse, camera);
+            
+            const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+            const intersectPoint = new THREE.Vector3();
+            raycaster.ray.intersectPlane(plane, intersectPoint);
+            
+            if (!intersectPoint) return null;
+            
+            const minX = -chartWidth / 2 + chartOffsetX;
+            const maxX = chartWidth / 2 + chartOffsetX;
+            const minY = -chartHeight / 2 + chartOffsetY;
+            const maxY = chartHeight / 2 + chartOffsetY;
+            
+            intersectPoint.x = Math.max(minX, Math.min(maxX, intersectPoint.x));
+            intersectPoint.y = Math.max(minY, Math.min(maxY, intersectPoint.y));
+            
+            return { point: intersectPoint };
+        }
+        
+        function yToPrice(y) {
+            if (!chartData) return 0;
+            const { minPrice, maxPrice } = chartData;
+            const priceRange = maxPrice - minPrice;
+            const normalizedY = (y - chartOffsetY + chartHeight / 2) / chartHeight;
+            return minPrice + (normalizedY * priceRange);
+        }
+        
+        function priceToY(price) {
+            if (!chartData) return 0;
+            const { minPrice, maxPrice } = chartData;
+            const priceRange = maxPrice - minPrice;
+            const normalizedPrice = (price - minPrice) / priceRange;
+            return normalizedPrice * chartHeight - chartHeight / 2 + chartOffsetY;
+        }
+        
+        function onMouseDown(event) {
+            updateMouse(event);
+            
+            if (currentTool === 'pan') {
+                isDrawing = true;
+                renderer.domElement.style.cursor = 'grabbing';
+                return;
+            }
+            
+            const intersect = getIntersection();
+            if (!intersect) return;
+            
+            isDrawing = true;
+            drawingPoints.push(intersect.point.clone());
+            
+            if (currentTool === 'horizontal') {
+                createHorizontalLine(intersect.point.y);
+                isDrawing = false;
+                drawingPoints = [];
+            } else if (currentTool === 'text') {
+                const text = prompt('Enter text:');
+                if (text) {
+                    createTextAnnotation(intersect.point.clone(), text);
+                }
+                isDrawing = false;
+                drawingPoints = [];
+            }
+        }
+        
+        function onMouseMove(event) {
+            updateMouse(event);
+            
+            const intersect = getIntersection();
+            if (intersect) {
+                lastMousePos = intersect.point;
+                updateCrosshair(intersect.point);
+                updateStatusBar();
+            }
+            
+            if (!isDrawing) {
+                if (['line', 'trendline', 'measure', 'fibonacci'].includes(currentTool) && drawingPoints.length === 1 && intersect) {
+                    showPreview(drawingPoints[0], intersect.point);
+                }
+                return;
+            }
+            
+            if (!intersect) return;
+            
+            if (currentTool === 'pan') {
+                const deltaX = event.movementX * 2;
+                const deltaY = -event.movementY * 2;
+                chartGroup.position.x += deltaX;
+                chartGroup.position.y += deltaY;
+                annotationsGroup.position.x += deltaX;
+                annotationsGroup.position.y += deltaY;
+            } else if (currentTool === 'draw' && drawingPoints.length > 0) {
+                drawingPoints.push(intersect.point.clone());
+                updateFreehandPreview();
+            } else if (drawingPoints.length === 1) {
+                showPreview(drawingPoints[0], intersect.point);
+            } else if (currentTool === 'rectangle' && drawingPoints.length > 0) {
+                showRectanglePreview(drawingPoints[0], intersect.point);
+            }
+        }
+        
+        function onMouseUp(event) {
+            if (!isDrawing) return;
+            
+            if (currentTool === 'pan') {
+                isDrawing = false;
+                renderer.domElement.style.cursor = 'grab';
+                return;
+            }
+            
+            const intersect = getIntersection();
+            if (!intersect && currentTool !== 'draw') return;
+            
+            if (currentTool === 'draw') {
+                if (drawingPoints.length > 2) {
+                    createFreehandLine([...drawingPoints]);
+                }
+                drawingPoints = [];
+                clearPreview();
+            } else if (currentTool === 'rectangle') {
+                if (drawingPoints.length > 0 && intersect) {
+                    createRectangle(drawingPoints[0], intersect.point.clone());
+                    drawingPoints = [];
+                    clearPreview();
+                }
+            } else if (['line', 'trendline'].includes(currentTool)) {
+                if (drawingPoints.length === 1 && intersect) {
+                    createLine(drawingPoints[0], intersect.point.clone());
+                    drawingPoints = [];
+                    clearPreview();
+                }
+            } else if (currentTool === 'fibonacci') {
+                if (drawingPoints.length === 1 && intersect) {
+                    createFibonacci(drawingPoints[0], intersect.point.clone());
+                    drawingPoints = [];
+                    clearPreview();
+                }
+            } else if (currentTool === 'measure') {
+                if (drawingPoints.length === 1 && intersect) {
+                    createMeasure(drawingPoints[0], intersect.point.clone());
+                    drawingPoints = [];
+                    clearPreview();
+                }
+            }
+            
+            isDrawing = false;
+        }
+        
+        function onWheel(event) {
+            event.preventDefault();
+            const delta = event.deltaY > 0 ? 0.9 : 1.1;
+            const newZoom = camera.zoom * delta;
+            camera.zoom = Math.max(0.5, Math.min(3, newZoom));
+            camera.updateProjectionMatrix();
+            document.getElementById('statusZoom').textContent = `${Math.round(camera.zoom * 100)}%`;
+        }
+        
+        function onWindowResize() {
+            chartWidth = window.innerWidth - 450;
+            chartHeight = window.innerHeight - 250;
+            chartOffsetX = -80;
+            
+            camera.left = -window.innerWidth / 2;
+            camera.right = window.innerWidth / 2;
+            camera.top = window.innerHeight / 2;
+            camera.bottom = -window.innerHeight / 2;
+            camera.updateProjectionMatrix();
+            
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            drawChart();
+        }
+        
+        // Tool selection
+        function selectTool(tool, button) {
+            currentTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            document.getElementById('statusTool').textContent = tool.charAt(0).toUpperCase() + tool.slice(1);
+            
+            const canvas = renderer.domElement;
+            if (tool === 'pan') {
+                canvas.style.cursor = 'grab';
+            } else if (tool === 'select') {
+                canvas.style.cursor = 'default';
+            } else {
+                canvas.style.cursor = 'crosshair';
+            }
+            
+            drawingPoints = [];
+            clearPreview();
+            
+            if (toolGuides[tool]) {
+                showGuide(tool);
+            }
+        }
+        
+        function showGuide(tool) {
+            const guide = toolGuides[tool];
+            const overlay = document.getElementById('guideOverlay');
+            const title = document.getElementById('guideTitle');
+            const stepsContainer = document.getElementById('guideSteps');
+            
+            title.textContent = guide.title;
+            stepsContainer.innerHTML = guide.steps.map(step => `
+                <div class="guide-step">
+                    <div class="guide-step-number">Step ${step.number}</div>
+                    <div class="guide-step-text">${step.text}</div>
+                </div>
+            `).join('');
+            
+            overlay.classList.add('active');
+        }
+        
+        function closeGuide() {
+            document.getElementById('guideOverlay').classList.remove('active');
+        }
+        
+        // Preview functions
+        function showPreview(start, end) {
+            clearPreview();
+            
+            const colorHex = document.getElementById('drawColor').value;
+            const color = parseInt(colorHex.replace('#', ''), 16);
+            const material = new THREE.LineBasicMaterial({ 
+                color: color, 
+                linewidth: 2,
+                opacity: 0.6,
+                transparent: true
+            });
+            
+            if (currentTool === 'line' || currentTool === 'trendline') {
+                const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+                const line = new THREE.Line(geometry, material);
+                previewGroup.add(line);
+                previewObjects.push(line);
+                
+                const dx = end.x - start.x;
+                const dy = end.y - start.y;
+                const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+                updatePreviewHint(`Angle: ${angle.toFixed(1)}°`, end);
+                
+            } else if (currentTool === 'measure') {
+                const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+                const line = new THREE.Line(geometry, material);
+                previewGroup.add(line);
+                previewObjects.push(line);
+                
+                const priceStart = yToPrice(start.y);
+                const priceEnd = yToPrice(end.y);
+                const diff = Math.abs(priceEnd - priceStart);
+                const percent = (diff / priceStart * 100).toFixed(2);
+                
+                const pointGeometry = new THREE.CircleGeometry(5, 16);
+                const pointMaterial = new THREE.MeshBasicMaterial({ color: color, opacity: 0.8, transparent: true });
+                const startPoint = new THREE.Mesh(pointGeometry, pointMaterial);
+                startPoint.position.copy(start);
+                const endPoint = new THREE.Mesh(pointGeometry, pointMaterial);
+                endPoint.position.copy(end);
+                previewGroup.add(startPoint);
+                previewGroup.add(endPoint);
+                previewObjects.push(startPoint, endPoint);
+                
+                updatePreviewHint(`$${diff.toFixed(2)} (${percent}%)`, end);
+                
+            } else if (currentTool === 'fibonacci') {
+                const levels = [
+                    { value: 0, label: '0%', color: 0xff4466 },
+                    { value: 0.236, label: '23.6%', color: 0xffaa44 },
+                    { value: 0.382, label: '38.2%', color: 0xffcc44 },
+                    { value: 0.5, label: '50%', color: 0xffee44 },
+                    { value: 0.618, label: '61.8%', color: 0x44ff88 },
+                    { value: 0.786, label: '78.6%', color: 0x44aaff },
+                    { value: 1, label: '100%', color: 0x4466ff }
+                ];
+                
+                const height = end.y - start.y;
+                const minX = Math.min(start.x, end.x);
+                const maxX = Math.max(start.x, end.x);
+                
+                levels.forEach(level => {
+                    const y = start.y + height * level.value;
+                    const fibGeometry = new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(minX, y, 0),
+                        new THREE.Vector3(maxX, y, 0)
+                    ]);
+                    const fibMaterial = new THREE.LineDashedMaterial({
+                        color: level.color,
+                        dashSize: 5,
+                        gapSize: 3,
+                        opacity: 0.7,
+                        transparent: true,
+                        linewidth: 1.5
+                    });
+                    const fibLine = new THREE.Line(fibGeometry, fibMaterial);
+                    fibLine.computeLineDistances();
+                    previewGroup.add(fibLine);
+                    previewObjects.push(fibLine);
+                });
+                
+                updatePreviewHint('Fibonacci Retracement', end);
+            }
+        }
+        
+        function showRectanglePreview(start, end) {
+            clearPreview();
+            
+            const color = parseInt(document.getElementById('drawColor').value.replace('#', ''), 16);
+            const width = Math.abs(end.x - start.x);
+            const height = Math.abs(end.y - start.y);
+            const centerX = (start.x + end.x) / 2;
+            const centerY = (start.y + end.y) / 2;
+            
+            const geometry = new THREE.PlaneGeometry(width, height);
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                opacity: 0.1,
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(centerX, centerY, 0);
+            
+            const edgeGeometry = new THREE.EdgesGeometry(geometry);
+            const edgeMaterial = new THREE.LineBasicMaterial({ color: color, opacity: 0.7, transparent: true });
+            const edges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+            edges.position.set(centerX, centerY, 0);
+            
+            previewGroup.add(mesh);
+            previewGroup.add(edges);
+            previewObjects.push(mesh, edges);
+        }
+        
+        function updateFreehandPreview() {
+            clearPreview();
+            
+            if (drawingPoints.length < 2) return;
+            
+            const color = parseInt(document.getElementById('drawColor').value.replace('#', ''), 16);
+            const material = new THREE.LineBasicMaterial({ color: color, linewidth: 2, opacity: 0.7, transparent: true });
+            const geometry = new THREE.BufferGeometry().setFromPoints(drawingPoints);
+            const line = new THREE.Line(geometry, material);
+            previewGroup.add(line);
+            previewObjects.push(line);
+        }
+        
+        function clearPreview() {
+            while (previewGroup.children.length > 0) {
+                previewGroup.remove(previewGroup.children[0]);
+            }
+            previewObjects = [];
+            hidePreviewHint();
+        }
+        
+        function updatePreviewHint(text, position) {
+            const hint = document.getElementById('previewHint');
+            hint.textContent = text;
+            hint.style.left = (event.clientX + 20) + 'px';
+            hint.style.top = (event.clientY - 30) + 'px';
+            hint.classList.add('active');
+        }
+        
+        function hidePreviewHint() {
+            document.getElementById('previewHint').classList.remove('active');
+        }
+        
+        // Create annotation functions
+        function createLine(start, end) {
+            const color = parseInt(document.getElementById('drawColor').value.replace('#', ''), 16);
+            const material = new THREE.LineBasicMaterial({ color: color, linewidth: 2 });
+            const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+            const line = new THREE.Line(geometry, material);
+            annotationsGroup.add(line);
+            
+            annotations.push({
+                type: 'line',
+                object: line,
+                data: { start, end, color }
+            });
+            
+            updateAnnotationList();
+            saveState();
+        }
+        
+        function createHorizontalLine(y) {
+            const color = parseInt(document.getElementById('drawColor').value.replace('#', ''), 16);
+            const material = new THREE.LineDashedMaterial({
+                color: color,
+                linewidth: 2,
+                dashSize: 10,
+                gapSize: 5
+            });
+            const geometry = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-chartWidth / 2 + chartOffsetX, y, 0),
+                new THREE.Vector3(chartWidth / 2 + chartOffsetX, y, 0)
+            ]);
+            const line = new THREE.Line(geometry, material);
+            line.computeLineDistances();
+            annotationsGroup.add(line);
+            
+            const price = yToPrice(y);
+            annotations.push({
+                type: 'horizontal',
+                object: line,
+                data: { y, price, color },
+                label: `Level: $${price.toFixed(2)}`
+            });
+            
+            updateAnnotationList();
+            saveState();
+        }
+        
+        function createRectangle(start, end) {
+            const color = parseInt(document.getElementById('drawColor').value.replace('#', ''), 16);
+            const width = Math.abs(end.x - start.x);
+            const height = Math.abs(end.y - start.y);
+            const centerX = (start.x + end.x) / 2;
+            const centerY = (start.y + end.y) / 2;
+            
+            const geometry = new THREE.PlaneGeometry(width, height);
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                opacity: 0.15,
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(centerX, centerY, 0);
+            
+            const edgeGeometry = new THREE.EdgesGeometry(geometry);
+            const edgeMaterial = new THREE.LineBasicMaterial({ color: color });
+            const edges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+            edges.position.set(centerX, centerY, 0);
+            
+            const group = new THREE.Group();
+            group.add(mesh);
+            group.add(edges);
+            annotationsGroup.add(group);
+            
+            annotations.push({
+                type: 'rectangle',
+                object: group,
+                data: { start, end, color },
+                label: 'Zone'
+            });
+            
+            updateAnnotationList();
+            saveState();
+        }
+        
+        function createFibonacci(start, end) {
+            const color = parseInt(document.getElementById('drawColor').value.replace('#', ''), 16);
+            const levels = [
+                { value: 0, color: 0xff4466 },
+                { value: 0.236, color: 0xffaa44 },
+                { value: 0.382, color: 0xffcc44 },
+                { value: 0.5, color: 0xffee44 },
+                { value: 0.618, color: 0x44ff88 },
+                { value: 0.786, color: 0x44aaff },
+                { value: 1, color: 0x4466ff }
+            ];
+            const height = end.y - start.y;
+            const group = new THREE.Group();
+            
+            levels.forEach(level => {
+                const y = start.y + height * level.value;
+                const geometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(Math.min(start.x, end.x), y, 0),
+                    new THREE.Vector3(Math.max(start.x, end.x), y, 0)
+                ]);
+                const material = new THREE.LineDashedMaterial({
+                    color: level.color,
+                    dashSize: 5,
+                    gapSize: 3
+                });
+                const line = new THREE.Line(geometry, material);
+                line.computeLineDistances();
+                group.add(line);
+            });
+            
+            annotationsGroup.add(group);
+            
+            annotations.push({
+                type: 'fibonacci',
+                object: group,
+                data: { start, end, color },
+                label: 'Fibonacci'
+            });
+            
+            updateAnnotationList();
+            saveState();
+        }
+        
+        function createMeasure(start, end) {
+            const color = parseInt(document.getElementById('drawColor').value.replace('#', ''), 16);
+            const material = new THREE.LineBasicMaterial({ color: color, linewidth: 2 });
+            const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+            const line = new THREE.Line(geometry, material);
+            annotationsGroup.add(line);
+            
+            const priceStart = yToPrice(start.y);
+            const priceEnd = yToPrice(end.y);
+            const diff = Math.abs(priceEnd - priceStart);
+            const percent = (diff / priceStart * 100).toFixed(2);
+            
+            annotations.push({
+                type: 'measure',
+                object: line,
+                data: { start, end, color },
+                label: `$${diff.toFixed(2)} (${percent}%)`
+            });
+            
+            updateAnnotationList();
+            saveState();
+        }
+        
+        function createFreehandLine(points) {
+            const color = parseInt(document.getElementById('drawColor').value.replace('#', ''), 16);
+            const material = new THREE.LineBasicMaterial({ color: color, linewidth: 2 });
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geometry, material);
+            annotationsGroup.add(line);
+            
+            annotations.push({
+                type: 'freehand',
+                object: line,
+                data: { points, color },
+                label: 'Drawing'
+            });
+            
+            updateAnnotationList();
+            saveState();
+        }
+        
+        function createTextAnnotation(position, text) {
+            annotations.push({
+                type: 'text',
+                object: null,
+                data: { position, text },
+                label: `Text: "${text}"`
+            });
+            
+            updateAnnotationList();
+            saveState();
+        }
+        
+        // Utility functions
+        function updateAnnotationList() {
+            const list = document.getElementById('annotationList');
+            if (annotations.length === 0) {
+                list.innerHTML = '<div style="font-size: 0.75rem; color: #8b95a8; font-style: italic;">No annotations yet</div>';
+                return;
+            }
+            
+            list.innerHTML = annotations.map((ann, i) => `
+                <div class="annotation-item">
+                    <span>${ann.type}: ${ann.label || 'Annotation'}</span>
+                    <button class="annotation-delete" onclick="deleteAnnotation(${i})">✕</button>
+                </div>
+            `).join('');
+        }
+        
+        function deleteAnnotation(index) {
+            const ann = annotations[index];
+            if (ann.object) {
+                annotationsGroup.remove(ann.object);
+            }
+            annotations.splice(index, 1);
+            updateAnnotationList();
+            saveState();
+        }
+        
+        function updateStatusBar() {
+            const intersect = getIntersection();
+            if (intersect) {
+                const price = yToPrice(intersect.point.y);
+                document.getElementById('statusPrice').textContent = `$${price.toFixed(2)}`;
+            }
+            document.getElementById('statusCount').textContent = annotations.length;
+        }
+        
+        function saveState() {
+            // Save to undo stack
+        }
+        
+        function undoAnnotation() {
+            if (annotations.length === 0) return;
+            const ann = annotations.pop();
+            if (ann.object) {
+                annotationsGroup.remove(ann.object);
+            }
+            updateAnnotationList();
+        }
+        
+        function redoAnnotation() {
+            // Implement redo
+        }
+        
+        function clearAllAnnotations() {
+            if (confirm('Clear all annotations?')) {
+                while (annotationsGroup.children.length > 0) {
+                    annotationsGroup.remove(annotationsGroup.children[0]);
+                }
+                annotations = [];
+                updateAnnotationList();
+            }
+        }
+        
+        function saveAnalysis() {
+            const data = {
+                stock: currentWhiteboardStock,
+                annotations: annotations.map(a => ({
+                    type: a.type,
+                    data: a.data,
+                    label: a.label
+                })),
+                notes: document.getElementById('analysisNotes').value,
+                timestamp: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentWhiteboardStock.ticker}_3d_analysis_${Date.now()}.json`;
+            a.click();
+        }
+        
+        function animate() {
+            if (!renderer) return;
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
