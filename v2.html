@@ -745,7 +745,7 @@
             <h1 class="scanner-title">TradeScan Pro</h1>
             <p class="scanner-subtitle">AI-Powered Stock Scanner with Professional Analysis Whiteboard</p>
             <p style="font-size: 0.75rem; color: #8b95a8; margin-top: 0.5rem;">
-                📊 Real-time data powered by Yahoo Finance • Updates every scan
+                📊 Real-time data powered by Yahoo Finance • 4 CORS proxies for reliability
             </p>
         </div>
         
@@ -788,12 +788,13 @@
                 </div>
                 <div style="font-size: 0.9rem; color: #e8edf2; line-height: 1.6;">
                     <p style="margin-bottom: 0.5rem;">
-                        We couldn't connect to Yahoo Finance API. This could be due to:
+                        We tried multiple CORS proxies but couldn't connect to Yahoo Finance API. This could be due to:
                     </p>
                     <ul style="list-style: none; padding: 0; margin: 0.5rem 0;">
                         <li>• Network connection issues</li>
-                        <li>• CORS proxy temporarily unavailable</li>
-                        <li>• Rate limiting (too many requests)</li>
+                        <li>• All CORS proxies temporarily unavailable</li>
+                        <li>• Firewall or security software blocking requests</li>
+                        <li>• GitHub Pages CORS restrictions</li>
                     </ul>
                     <p style="margin-top: 0.75rem; font-weight: 600; color: #ffbb33;">
                         📊 Showing SAMPLE DATA for demonstration purposes
@@ -801,6 +802,9 @@
                     <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #8b95a8;">
                         Prices and indicators are randomly generated and not real
                     </p>
+                    <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(0, 0, 0, 0.2); border-radius: 6px; font-size: 0.85rem; color: #8b95a8;">
+                        💡 <strong>Tip:</strong> Try downloading the HTML file and opening it locally, or host on a different platform (Netlify, Vercel, etc.)
+                    </div>
                     <button onclick="scanStocks()" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background: #ffbb33; color: #0a0e1a; border: none; border-radius: 6px; font-weight: 700; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.2s;">
                         🔄 Retry with Live Data
                     </button>
@@ -1112,133 +1116,163 @@
             displayResults();
         }
         
+        // CORS Proxy Configuration - Multiple fallbacks
+        const CORS_PROXIES = [
+            'https://corsproxy.io/?',
+            'https://api.codetabs.com/v1/proxy?quest=',
+            'https://thingproxy.freeboard.io/fetch/',
+            'https://api.allorigins.win/raw?url='
+        ];
+        let currentProxyIndex = 0;
+        
         async function analyzeStock(ticker, accountSize, riskPercent, range) {
-            try {
-                // Convert range to Yahoo Finance format
-                const rangeMap = {
-                    '5d': '5d',
-                    '1mo': '1mo',
-                    '3mo': '3mo',
-                    '6mo': '6mo',
-                    '1y': '1y'
-                };
-                const yahooRange = rangeMap[range] || '1mo';
-                
-                // Use CORS proxy to bypass browser restrictions
-                const corsProxy = 'https://api.allorigins.win/raw?url=';
-                const apiUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=${yahooRange}&interval=1d`;
-                const proxyUrl = corsProxy + encodeURIComponent(apiUrl);
-                
-                // Fetch real data from Yahoo Finance via proxy
-                const response = await fetch(proxyUrl, {
-                    method: 'GET',
-                    timeout: 10000 // 10 second timeout
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch data for ${ticker}: ${response.status}`);
+            // Try each proxy until one works
+            for (let proxyIndex = 0; proxyIndex < CORS_PROXIES.length; proxyIndex++) {
+                try {
+                    const rangeMap = {
+                        '5d': '5d',
+                        '1mo': '1mo',
+                        '3mo': '3mo',
+                        '6mo': '6mo',
+                        '1y': '1y'
+                    };
+                    const yahooRange = rangeMap[range] || '1mo';
+                    
+                    // Build proxy URL
+                    const corsProxy = CORS_PROXIES[proxyIndex];
+                    const apiUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=${yahooRange}&interval=1d`;
+                    const proxyUrl = corsProxy + encodeURIComponent(apiUrl);
+                    
+                    console.log(`🔄 Trying proxy ${proxyIndex + 1}/${CORS_PROXIES.length} for ${ticker}`);
+                    
+                    // Fetch with timeout
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+                    
+                    const response = await fetch(proxyUrl, {
+                        method: 'GET',
+                        signal: controller.signal
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Validate response structure
+                    if (!data.chart || !data.chart.result || data.chart.result.length === 0) {
+                        throw new Error('Invalid data structure');
+                    }
+                    
+                    const result = data.chart.result[0];
+                    
+                    // Extract real data
+                    const price = result.meta.regularMarketPrice;
+                    const priceHistory = result.indicators.quote[0].close.filter(p => p !== null);
+                    
+                    if (!price || priceHistory.length === 0) {
+                        throw new Error('No price data');
+                    }
+                    
+                    // Calculate moving averages
+                    const ma50 = calculateMA(priceHistory, Math.min(50, priceHistory.length));
+                    const ma200 = calculateMA(priceHistory, Math.min(200, priceHistory.length));
+                    const rsi = calculateRSI(priceHistory, 14);
+                    
+                    // Get volume data
+                    const volumes = result.indicators.quote[0].volume.filter(v => v !== null);
+                    const avgVolume = volumes.slice(-20).reduce((a, b) => a + b, 0) / 20;
+                    const currentVolume = volumes[volumes.length - 1];
+                    const volumeRatio = currentVolume / avgVolume;
+                    
+                    // Determine setup
+                    let setup = 'pullback';
+                    let signal = 'BUY';
+                    
+                    if (price > ma50 && price > ma200) {
+                        setup = ma50 > ma200 ? 'breakout' : 'pullback';
+                        signal = 'BUY';
+                    } else if (price < ma50 && price < ma200) {
+                        setup = 'downtrend';
+                        signal = 'WAIT';
+                    } else if (price > ma200 && price < ma50) {
+                        setup = 'pullback';
+                        signal = 'BUY';
+                    }
+                    
+                    // Calculate trade levels
+                    const entry = price;
+                    const stop = Math.max(ma50 * 0.98, price * 0.97);
+                    const target = price * 1.09;
+                    
+                    const riskPerShare = entry - stop;
+                    const rewardPerShare = target - entry;
+                    const rrRatio = rewardPerShare / riskPerShare;
+                    
+                    const riskAmount = accountSize * (riskPercent / 100);
+                    const shares = Math.floor(riskAmount / riskPerShare);
+                    const positionSize = shares * entry;
+                    
+                    // Calculate score
+                    let score = 50;
+                    score += rrRatio > 3 ? 20 : rrRatio > 2 ? 10 : 0;
+                    score += volumeRatio > 1.5 ? 15 : volumeRatio > 1 ? 10 : 0;
+                    score += rsi > 30 && rsi < 70 ? 15 : 0;
+                    score += price > ma50 ? 10 : 0;
+                    score += ma50 > ma200 ? 10 : 0;
+                    score = Math.min(100, Math.max(0, Math.round(score)));
+                    
+                    // Success! Update current working proxy
+                    currentProxyIndex = proxyIndex;
+                    apiFailureCount = 0;
+                    
+                    console.log(`✅ Success with proxy ${proxyIndex + 1} for ${ticker}`);
+                    
+                    return {
+                        ticker,
+                        price,
+                        signal,
+                        setup,
+                        score,
+                        levels: { entry, stop, target },
+                        indicators: { ma50, ma200, rsi, volume_ratio: volumeRatio },
+                        position: { 
+                            shares, 
+                            position_size: positionSize, 
+                            risk_amount: riskAmount,
+                            rr_ratio: rrRatio,
+                            potential_reward: shares * rewardPerShare
+                        },
+                        priceHistory,
+                        range,
+                        dataSource: 'live',
+                        proxyUsed: proxyIndex + 1
+                    };
+                    
+                } catch (error) {
+                    console.error(`❌ Proxy ${proxyIndex + 1} failed for ${ticker}:`, error.message);
+                    
+                    // Try next proxy if available
+                    if (proxyIndex < CORS_PROXIES.length - 1) {
+                        continue;
+                    }
+                    
+                    // All proxies failed
+                    console.error(`❌ All proxies failed for ${ticker}`);
+                    apiFailureCount++;
+                    usingSampleData = true;
+                    
+                    return generateMockStock(ticker, accountSize, riskPercent, range);
                 }
-                
-                const data = await response.json();
-                
-                // Validate response structure
-                if (!data.chart || !data.chart.result || data.chart.result.length === 0) {
-                    throw new Error(`Invalid data structure for ${ticker}`);
-                }
-                
-                const result = data.chart.result[0];
-                
-                // Extract real data
-                const price = result.meta.regularMarketPrice;
-                const priceHistory = result.indicators.quote[0].close.filter(p => p !== null);
-                const timestamps = result.timestamp;
-                
-                // Validate we got actual data
-                if (!price || priceHistory.length === 0) {
-                    throw new Error(`No price data for ${ticker}`);
-                }
-                
-                // Calculate moving averages from real data
-                const ma50 = calculateMA(priceHistory, Math.min(50, priceHistory.length));
-                const ma200 = calculateMA(priceHistory, Math.min(200, priceHistory.length));
-                
-                // Calculate RSI from real data
-                const rsi = calculateRSI(priceHistory, 14);
-                
-                // Get volume data
-                const volumes = result.indicators.quote[0].volume.filter(v => v !== null);
-                const avgVolume = volumes.slice(-20).reduce((a, b) => a + b, 0) / 20;
-                const currentVolume = volumes[volumes.length - 1];
-                const volumeRatio = currentVolume / avgVolume;
-                
-                // Determine setup based on price action relative to MAs
-                let setup = 'pullback';
-                let signal = 'BUY';
-                
-                if (price > ma50 && price > ma200) {
-                    setup = ma50 > ma200 ? 'breakout' : 'pullback';
-                    signal = 'BUY';
-                } else if (price < ma50 && price < ma200) {
-                    setup = 'downtrend';
-                    signal = 'WAIT';
-                } else if (price > ma200 && price < ma50) {
-                    setup = 'pullback';
-                    signal = 'BUY';
-                }
-                
-                // Calculate trade levels
-                const entry = price;
-                const stop = Math.max(ma50 * 0.98, price * 0.97);
-                const target = price * 1.09;
-                
-                const riskPerShare = entry - stop;
-                const rewardPerShare = target - entry;
-                const rrRatio = rewardPerShare / riskPerShare;
-                
-                const riskAmount = accountSize * (riskPercent / 100);
-                const shares = Math.floor(riskAmount / riskPerShare);
-                const positionSize = shares * entry;
-                
-                // Calculate score based on real indicators
-                let score = 50;
-                score += rrRatio > 3 ? 20 : rrRatio > 2 ? 10 : 0;
-                score += volumeRatio > 1.5 ? 15 : volumeRatio > 1 ? 10 : 0;
-                score += rsi > 30 && rsi < 70 ? 15 : 0;
-                score += price > ma50 ? 10 : 0;
-                score += ma50 > ma200 ? 10 : 0;
-                score = Math.min(100, Math.max(0, Math.round(score)));
-                
-                // Success! Reset failure count
-                apiFailureCount = 0;
-                
-                return {
-                    ticker,
-                    price,
-                    signal,
-                    setup,
-                    score,
-                    levels: { entry, stop, target },
-                    indicators: { ma50, ma200, rsi, volume_ratio: volumeRatio },
-                    position: { 
-                        shares, 
-                        position_size: positionSize, 
-                        risk_amount: riskAmount,
-                        rr_ratio: rrRatio,
-                        potential_reward: shares * rewardPerShare
-                    },
-                    priceHistory,
-                    range,
-                    dataSource: 'live' // Indicate this is real data
-                };
-                
-            } catch (error) {
-                console.error(`❌ Error analyzing ${ticker}:`, error.message);
-                apiFailureCount++;
-                usingSampleData = true;
-                
-                // Fallback to mock data if API fails
-                return generateMockStock(ticker, accountSize, riskPercent, range);
             }
+            
+            // Fallback if loop completes without return
+            apiFailureCount++;
+            usingSampleData = true;
+            return generateMockStock(ticker, accountSize, riskPercent, range);
         }
         
         // Fallback function for when API fails
