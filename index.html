@@ -437,23 +437,24 @@
             border: 2px solid var(--border);
             border-radius: 12px;
             width: 95%;
-            max-width: 1400px;
-            height: 85vh;
+            max-width: 1600px;
+            height: 90vh;
             display: flex;
             flex-direction: column;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
         }
         
         .chart-popup-header {
-            padding: 1.5rem 2rem;
+            padding: 1rem 1.5rem;
             border-bottom: 2px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: var(--bg-tertiary);
         }
         
         .chart-popup-title {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: var(--text-primary);
             font-family: 'JetBrains Mono', monospace;
@@ -463,11 +464,11 @@
             background: var(--accent-red);
             border: none;
             color: white;
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -481,51 +482,146 @@
         
         .chart-popup-body {
             flex: 1;
-            padding: 2rem;
+            display: flex;
+            gap: 0;
+            overflow: hidden;
+        }
+        
+        .popup-left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            gap: 1rem;
             overflow-y: auto;
         }
         
-        .popup-chart-container {
-            height: 600px;
+        .popup-right-panel {
+            width: 320px;
             background: var(--bg-tertiary);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
+            border-left: 2px solid var(--border);
+            padding: 1.5rem;
+            overflow-y: auto;
         }
         
-        .chart-expand-btn {
-            position: absolute;
-            top: 1rem;
-            left: 1rem;
-            background: rgba(68, 136, 255, 0.2);
-            border: 1.5px solid var(--accent-blue);
-            color: var(--accent-blue);
-            padding: 0.5rem 1rem;
+        .popup-chart-wrapper {
+            flex: 1;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 500px;
+        }
+        
+        .popup-chart-container {
+            flex: 1;
+            position: relative;
+            min-height: 450px;
+        }
+        
+        .popup-toolbar {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
             border-radius: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .popup-tool-btn {
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border: 1.5px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .popup-tool-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-blue);
+        }
+        
+        .popup-tool-btn.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+        
+        .popup-tool-btn.reset {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            color: white;
+        }
+        
+        .popup-tool-btn.reset:hover {
+            background: #ff6688;
+        }
+        
+        .popup-timeframe-group {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.25rem;
+            border-radius: 6px;
+        }
+        
+        .popup-timeframe-btn {
+            padding: 0.5rem 0.75rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            border-radius: 4px;
             cursor: pointer;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.75rem;
             font-weight: 600;
             transition: all 0.2s;
-            z-index: 5;
         }
         
-        .chart-expand-btn:hover {
-            background: rgba(68, 136, 255, 0.3);
-            transform: scale(1.05);
+        .popup-timeframe-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
         }
         
-        /* Trading zones in popup */
+        .popup-timeframe-btn.active {
+            background: var(--accent-green);
+            color: white;
+        }
+        
+        .popup-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .popup-section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
         .popup-zones {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1rem;
-            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
         }
         
         .popup-zone {
-            background: var(--bg-tertiary);
-            padding: 1.5rem;
+            background: var(--bg-secondary);
+            padding: 1rem;
             border-radius: 8px;
             border-left: 4px solid;
         }
@@ -545,22 +641,104 @@
         .popup-zone-title {
             font-weight: 600;
             margin-bottom: 0.5rem;
-            font-size: 0.9rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         
         .popup-zone-value {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 700;
             font-family: 'JetBrains Mono', monospace;
             margin-bottom: 0.5rem;
         }
         
         .popup-zone-desc {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
             line-height: 1.4;
+        }
+        
+        .popup-indicators {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        
+        .popup-indicator {
+            background: var(--bg-secondary);
+            padding: 0.75rem;
+            border-radius: 6px;
+        }
+        
+        .popup-indicator-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .popup-indicator-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+        }
+        
+        .popup-notes {
+            margin-top: 1.5rem;
+        }
+        
+        .popup-notes-textarea {
+            width: 100%;
+            min-height: 100px;
+            background: var(--bg-secondary);
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            padding: 0.75rem;
+            color: var(--text-primary);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.85rem;
+            resize: vertical;
+        }
+        
+        .popup-notes-textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        
+        .popup-annotations {
+            margin-top: 1rem;
+        }
+        
+        .popup-annotation-item {
+            padding: 0.5rem;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .popup-annotation-delete {
+            background: transparent;
+            border: none;
+            color: var(--accent-red);
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .popup-annotation-delete:hover {
+            background: var(--accent-red);
+            color: white;
         }
         
         .chart-loading {
@@ -1915,17 +2093,331 @@
                 <button class="chart-popup-close" onclick="closeChartPopup()">✕</button>
             </div>
             <div class="chart-popup-body">
-                <div class="popup-chart-container">
-                    <canvas id="popupChart"></canvas>
+                <!-- Left Panel: Chart with Tools -->
+                <div class="popup-left-panel">
+                    <div class="popup-toolbar">
+                        <!-- Timeframe Selector -->
+                        <div class="popup-timeframe-group">
+                            <button class="popup-timeframe-btn" onclick="changePopupTimeframe('5d', this)">5D</button>
+                            <button class="popup-timeframe-btn active" onclick="changePopupTimeframe('1mo', this)">1M</button>
+                            <button class="popup-timeframe-btn" onclick="changePopupTimeframe('3mo', this)">3M</button>
+                            <button class="popup-timeframe-btn" onclick="changePopupTimeframe('6mo', this)">6M</button>
+                            <button class="popup-timeframe-btn" onclick="changePopupTimeframe('1y', this)">1Y</button>
+                        </div>
+                        
+                        <!-- Analysis Tools -->
+                        <button class="popup-tool-btn" id="horizontalLineTool" onclick="activateTool('horizontal')">
+                            <span>📏</span> Horizontal Line
+                        </button>
+                        <button class="popup-tool-btn" id="trendLineTool" onclick="activateTool('trend')">
+                            <span>📐</span> Trend Line
+                        </button>
+                        <button class="popup-tool-btn" id="markerTool" onclick="activateTool('marker')">
+                            <span>📍</span> Price Marker
+                        </button>
+                        <button class="popup-tool-btn reset" onclick="clearAnnotations()">
+                            <span>🗑️</span> Clear All
+                        </button>
+                    </div>
+                    
+                    <div class="popup-chart-wrapper">
+                        <div class="popup-chart-container">
+                            <canvas id="popupChart"></canvas>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="popup-zones" id="popupZones"></div>
+                <!-- Right Panel: Trading Info -->
+                <div class="popup-right-panel">
+                    <!-- Trading Zones -->
+                    <div class="popup-section">
+                        <div class="popup-section-title">🎯 Trading Zones</div>
+                        <div class="popup-zones" id="popupZones"></div>
+                    </div>
+                    
+                    <!-- Key Indicators -->
+                    <div class="popup-section">
+                        <div class="popup-section-title">📊 Key Metrics</div>
+                        <div class="popup-indicators" id="popupIndicators"></div>
+                    </div>
+                    
+                    <!-- Your Annotations -->
+                    <div class="popup-section">
+                        <div class="popup-section-title">📝 Your Analysis</div>
+                        <div class="popup-annotations" id="popupAnnotationsList"></div>
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="popup-notes">
+                        <div class="popup-section-title">💭 Trading Notes</div>
+                        <textarea 
+                            id="popupNotes" 
+                            class="popup-notes-textarea" 
+                            placeholder="Add your analysis notes here...&#10;&#10;Example:&#10;- Strong support at MA50&#10;- Volume increasing&#10;- Wait for confirmation"></textarea>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     
     <script>
         let popupChartInstance = null;
+        let currentPopupTicker = null;
+        let currentPopupRange = '1mo';
+        let activeTool = null;
+        let userAnnotations = [];
+        let clickPoints = [];
+        
+        function activateTool(toolName) {
+            // Deactivate all tools
+            document.querySelectorAll('.popup-tool-btn').forEach(btn => {
+                if (!btn.classList.contains('reset')) {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            if (activeTool === toolName) {
+                activeTool = null;
+                return;
+            }
+            
+            activeTool = toolName;
+            const toolBtn = document.getElementById(toolName + 'LineTool') || document.getElementById('markerTool');
+            if (toolBtn) {
+                toolBtn.classList.add('active');
+            }
+            
+            alert(`Click on the chart to add ${toolName === 'horizontal' ? 'horizontal line' : toolName === 'trend' ? 'trend line (click 2 points)' : 'price marker'}`);
+        }
+        
+        function clearAnnotations() {
+            userAnnotations = [];
+            clickPoints = [];
+            updateAnnotationsList();
+            if (popupChartInstance) {
+                refreshPopupChart();
+            }
+        }
+        
+        function updateAnnotationsList() {
+            const list = document.getElementById('popupAnnotationsList');
+            if (!list) return;
+            
+            if (userAnnotations.length === 0) {
+                list.innerHTML = '<div style="font-size: 0.75rem; color: var(--text-secondary); font-style: italic;">No annotations yet. Use tools above to mark key levels.</div>';
+                return;
+            }
+            
+            list.innerHTML = userAnnotations.map((ann, i) => `
+                <div class="popup-annotation-item">
+                    <span>${ann.label}: $${ann.value.toFixed(2)}</span>
+                    <button class="popup-annotation-delete" onclick="deleteAnnotation(${i})">✕</button>
+                </div>
+            `).join('');
+        }
+        
+        function deleteAnnotation(index) {
+            userAnnotations.splice(index, 1);
+            updateAnnotationsList();
+            if (popupChartInstance) {
+                refreshPopupChart();
+            }
+        }
+        
+        function changePopupTimeframe(range, button) {
+            currentPopupRange = range;
+            document.querySelectorAll('.popup-timeframe-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            if (currentPopupTicker) {
+                refreshPopupChart();
+            }
+        }
+        
+        function refreshPopupChart() {
+            if (!currentPopupTicker) return;
+            createPopupChart(currentPopupTicker, currentPopupRange);
+        }
+        
+        function createPopupChart(ticker, range) {
+            const stockCard = document.querySelector(`[data-ticker="${ticker}"]`);
+            if (!stockCard) return;
+            
+            const stock = window.scannedStocks?.find(s => s.ticker === ticker);
+            if (!stock) return;
+            
+            const canvas = document.getElementById('popupChart');
+            const ctx = canvas.getContext('2d');
+            
+            // Destroy existing chart
+            if (popupChartInstance) {
+                popupChartInstance.destroy();
+            }
+            
+            // Get existing chart data
+            const chartContainerId = `chart-container-${ticker}-${window.scannedStocks.findIndex(s => s.ticker === ticker)}`;
+            const existingChartKey = `${ticker}-${range}`;
+            const existingChart = chartInstances[existingChartKey];
+            
+            if (!existingChart) {
+                console.warn('Chart not found, loading...');
+                return;
+            }
+            
+            const data = JSON.parse(JSON.stringify(existingChart.data));
+            const currentMA50 = parseFloat(stockCard?.dataset.ma50 || 100);
+            const currentMA200 = parseFloat(stockCard?.dataset.ma200 || 95);
+            
+            // Add user annotations to chart
+            const annotations = generateAnnotations(
+                data.datasets[0].data, 
+                currentMA50, 
+                currentMA200, 
+                data.labels.length
+            );
+            
+            // Add user-drawn annotations
+            userAnnotations.forEach((ann, i) => {
+                annotations[`user_${i}`] = {
+                    type: 'line',
+                    yMin: ann.value,
+                    yMax: ann.value,
+                    borderColor: ann.color || '#ffbb33',
+                    borderWidth: 2,
+                    borderDash: ann.dashed ? [8, 4] : [],
+                    label: {
+                        display: true,
+                        content: ann.label,
+                        position: 'end',
+                        backgroundColor: 'rgba(18, 24, 38, 0.9)',
+                        color: ann.color || '#ffbb33',
+                        font: {
+                            size: 10,
+                            family: 'JetBrains Mono'
+                        },
+                        padding: 4
+                    }
+                };
+            });
+            
+            // Create enhanced popup chart
+            popupChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: {
+                    ...existingChart.options,
+                    maintainAspectRatio: false,
+                    onClick: handleChartClick,
+                    plugins: {
+                        ...existingChart.options.plugins,
+                        title: {
+                            display: true,
+                            text: `${ticker} - ${range.toUpperCase()} Price Action Analysis`,
+                            color: '#e8edf2',
+                            font: {
+                                family: 'JetBrains Mono',
+                                size: 16,
+                                weight: 'bold'
+                            },
+                            padding: 15
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#8b95a8',
+                                font: {
+                                    family: 'JetBrains Mono',
+                                    size: 12
+                                },
+                                boxWidth: 15,
+                                padding: 12
+                            }
+                        },
+                        annotation: {
+                            annotations: annotations
+                        }
+                    },
+                    scales: {
+                        ...existingChart.options.scales,
+                        y: {
+                            ...existingChart.options.scales.y,
+                            ticks: {
+                                ...existingChart.options.scales.y.ticks,
+                                font: {
+                                    family: 'JetBrains Mono',
+                                    size: 11
+                                }
+                            }
+                        },
+                        x: {
+                            ...existingChart.options.scales.x,
+                            ticks: {
+                                ...existingChart.options.scales.x.ticks,
+                                font: {
+                                    family: 'JetBrains Mono',
+                                    size: 10
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function handleChartClick(event) {
+            if (!activeTool || !popupChartInstance) return;
+            
+            const canvasPosition = Chart.helpers.getRelativePosition(event, popupChartInstance);
+            const dataX = popupChartInstance.scales.x.getValueForPixel(canvasPosition.x);
+            const dataY = popupChartInstance.scales.y.getValueForPixel(canvasPosition.y);
+            
+            if (activeTool === 'horizontal') {
+                userAnnotations.push({
+                    type: 'horizontal',
+                    value: dataY,
+                    label: `Level: $${dataY.toFixed(2)}`,
+                    color: '#ffbb33',
+                    dashed: true
+                });
+                activeTool = null;
+                document.getElementById('horizontalLineTool').classList.remove('active');
+                updateAnnotationsList();
+                refreshPopupChart();
+            } else if (activeTool === 'marker') {
+                userAnnotations.push({
+                    type: 'marker',
+                    value: dataY,
+                    label: `📍 $${dataY.toFixed(2)}`,
+                    color: '#4488ff',
+                    dashed: false
+                });
+                activeTool = null;
+                document.getElementById('markerTool').classList.remove('active');
+                updateAnnotationsList();
+                refreshPopupChart();
+            } else if (activeTool === 'trend') {
+                clickPoints.push({ x: dataX, y: dataY });
+                if (clickPoints.length === 2) {
+                    const [point1, point2] = clickPoints;
+                    const slope = (point2.y - point1.y) / (point2.x - point1.x);
+                    const direction = slope > 0 ? 'Uptrend' : 'Downtrend';
+                    userAnnotations.push({
+                        type: 'trend',
+                        value: point1.y,
+                        label: `${direction} Line`,
+                        color: slope > 0 ? '#00ff88' : '#ff4466',
+                        dashed: false,
+                        points: clickPoints
+                    });
+                    clickPoints = [];
+                    activeTool = null;
+                    document.getElementById('trendLineTool').classList.remove('active');
+                    updateAnnotationsList();
+                    refreshPopupChart();
+                }
+            }
+        }
         
         function openChartPopup(ticker, range) {
             const popup = document.getElementById('chartPopup');
@@ -1939,18 +2431,17 @@
             
             const stock = window.scannedStocks?.find(s => s.ticker === ticker);
             if (!stock) {
-                console.error('Stock data not found in scannedStocks');
+                console.error('Stock data not found');
                 return;
             }
             
+            currentPopupTicker = ticker;
+            currentPopupRange = range;
+            
             // Set title
-            title.textContent = `${ticker} - ${range.toUpperCase()} Detailed Analysis`;
+            title.textContent = `${ticker} - Detailed Analysis`;
             
-            // Show popup
-            popup.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            
-            // Create zones info with proper data
+            // Populate trading zones
             const entry = stock.levels?.entry || stock.price;
             const stop = stock.levels?.stop || (stock.price * 0.97);
             const target = stock.levels?.target || (stock.price * 1.03);
@@ -1963,88 +2454,65 @@
                 <div class="popup-zone entry">
                     <div class="popup-zone-title">🎯 Entry Zone</div>
                     <div class="popup-zone-value" style="color: var(--accent-green)">$${entry.toFixed(2)}</div>
-                    <div class="popup-zone-desc">Buy when price touches MA50 support. Current MA50: $${stock.indicators?.ma50?.toFixed(2) || 'N/A'}</div>
+                    <div class="popup-zone-desc">Buy when price touches MA50 support at $${stock.indicators?.ma50?.toFixed(2) || 'N/A'}</div>
                 </div>
                 
                 <div class="popup-zone stop">
                     <div class="popup-zone-title">🛑 Stop Loss</div>
                     <div class="popup-zone-value" style="color: var(--accent-red)">$${stop.toFixed(2)}</div>
-                    <div class="popup-zone-desc">Exit if price breaks below this level. Risk: $${riskPerShare.toFixed(2)} per share (${riskPercent}%)</div>
+                    <div class="popup-zone-desc">Risk: $${riskPerShare.toFixed(2)}/share (${riskPercent}%)</div>
                 </div>
                 
                 <div class="popup-zone target">
                     <div class="popup-zone-title">🎯 Target</div>
                     <div class="popup-zone-value" style="color: var(--accent-blue)">$${target.toFixed(2)}</div>
-                    <div class="popup-zone-desc">Take profit zone. Reward: $${rewardPerShare.toFixed(2)} per share. R:R = ${rrRatio.toFixed(2)}:1</div>
+                    <div class="popup-zone-desc">Reward: $${rewardPerShare.toFixed(2)}/share • R:R ${rrRatio.toFixed(2)}:1</div>
                 </div>
             `;
             document.getElementById('popupZones').innerHTML = zonesHTML;
             
-            // Recreate chart in popup with larger size
+            // Populate indicators
+            const indicatorsHTML = `
+                <div class="popup-indicator">
+                    <div class="popup-indicator-label">RSI</div>
+                    <div class="popup-indicator-value">${stock.indicators?.rsi?.toFixed(1) || 'N/A'}</div>
+                </div>
+                <div class="popup-indicator">
+                    <div class="popup-indicator-label">Volume</div>
+                    <div class="popup-indicator-value">${stock.indicators?.volume_ratio?.toFixed(2) || 'N/A'}x</div>
+                </div>
+                <div class="popup-indicator">
+                    <div class="popup-indicator-label">Trend</div>
+                    <div class="popup-indicator-value">${stock.indicators?.trend_strength || 'N/A'}%</div>
+                </div>
+                <div class="popup-indicator">
+                    <div class="popup-indicator-label">Score</div>
+                    <div class="popup-indicator-value" style="color: ${stock.score >= 70 ? 'var(--accent-green)' : stock.score >= 40 ? 'var(--accent-yellow)' : 'var(--accent-red)'}">${stock.score}/100</div>
+                </div>
+                <div class="popup-indicator">
+                    <div class="popup-indicator-label">Signal</div>
+                    <div class="popup-indicator-value" style="color: ${stock.signal === 'BUY' ? 'var(--accent-green)' : stock.signal === 'SELL' ? 'var(--accent-red)' : 'var(--accent-yellow)'}">${stock.signal}</div>
+                </div>
+                <div class="popup-indicator">
+                    <div class="popup-indicator-label">Setup</div>
+                    <div class="popup-indicator-value" style="font-size: 0.85rem;">${stock.setup?.type || 'None'}</div>
+                </div>
+            `;
+            document.getElementById('popupIndicators').innerHTML = indicatorsHTML;
+            
+            // Reset annotations
+            updateAnnotationsList();
+            
+            // Clear notes
+            document.getElementById('popupNotes').value = '';
+            
+            // Show popup
+            popup.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Create chart
             setTimeout(() => {
-                const canvas = document.getElementById('popupChart');
-                const ctx = canvas.getContext('2d');
-                
-                // Destroy existing popup chart
-                if (popupChartInstance) {
-                    popupChartInstance.destroy();
-                }
-                
-                // Get chart container ID
-                const chartContainerId = `chart-container-${ticker}-${window.scannedStocks.findIndex(s => s.ticker === ticker)}`;
-                const existingChartKey = `${ticker}-${range}`;
-                const existingChart = chartInstances[existingChartKey];
-                
-                if (existingChart) {
-                    const data = existingChart.data;
-                    const currentMA50 = parseFloat(stockCard?.dataset.ma50 || 100);
-                    const currentMA200 = parseFloat(stockCard?.dataset.ma200 || 95);
-                    const currentPrice = data.datasets[0].data[data.datasets[0].data.length - 1];
-                    
-                    // Create popup chart with enhanced config
-                    popupChartInstance = new Chart(ctx, {
-                        type: 'line',
-                        data: JSON.parse(JSON.stringify(data)), // Deep clone
-                        options: {
-                            ...JSON.parse(JSON.stringify(existingChart.options)),
-                            maintainAspectRatio: false,
-                            plugins: {
-                                ...existingChart.options.plugins,
-                                title: {
-                                    display: true,
-                                    text: `${ticker} - Price Action Analysis (${range.toUpperCase()})`,
-                                    color: '#e8edf2',
-                                    font: {
-                                        family: 'JetBrains Mono',
-                                        size: 18,
-                                        weight: 'bold'
-                                    },
-                                    padding: 20
-                                },
-                                legend: {
-                                    display: true,
-                                    position: 'top',
-                                    labels: {
-                                        color: '#8b95a8',
-                                        font: {
-                                            family: 'JetBrains Mono',
-                                            size: 13
-                                        },
-                                        boxWidth: 15,
-                                        padding: 15
-                                    }
-                                }
-                            }
-                        }
-                    });
-                } else {
-                    // If chart doesn't exist yet, create it from scratch
-                    console.warn('Creating new chart for popup');
-                    createChart(ticker, 'popup-temp', range).then(() => {
-                        // Retry after chart is created
-                        setTimeout(() => openChartPopup(ticker, range), 500);
-                    });
-                }
+                createPopupChart(ticker, range);
             }, 100);
         }
         
